@@ -24,3 +24,5 @@ If your change is large and requires a review:
 3. Push your changes
 4. Create a pull request
 5. Add someone for review
+
+Please use Projects tab to add TODOs and track goals.
