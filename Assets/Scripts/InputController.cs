@@ -6,7 +6,7 @@ public class InputController : MonoBehaviour
 {
     public GameObject cameraOrbit;
 
-    private float rotateSpeed = 12f;
+    public float rotateSpeed = 20f;
 
     void Update()
     {
@@ -17,7 +17,9 @@ public class InputController : MonoBehaviour
 
             if (cameraOrbit.transform.eulerAngles.z + v <= 0.1f
                 || cameraOrbit.transform.eulerAngles.z + v >= 179.9f)
+            {
                 v = 0;
+            }
 
             cameraOrbit.transform.eulerAngles =
                 new Vector3(
