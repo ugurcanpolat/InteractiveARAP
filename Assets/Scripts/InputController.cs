@@ -8,6 +8,16 @@ public class InputController : MonoBehaviour
 
     public float rotateSpeed = 20f;
 
+    Mesh mesh;
+    Vector3[] vertices;
+    bool mouseDown = false;
+
+    void Start()
+    {
+        mesh = GameObject.Find("Mesh").GetComponent<MeshFilter>().mesh;
+        vertices = mesh.vertices;
+    }
+
     void Update()
     {
         if (Input.GetMouseButton(0))
@@ -34,6 +44,25 @@ public class InputController : MonoBehaviour
         {
             cameraOrbit.transform.localScale =
                 cameraOrbit.transform.localScale * (1f - scrollFactor);
+        }
+
+        // vertex movement
+        if(Input.GetMouseButtonUp(1))
+        {
+            mouseDown = false;
+        }
+        if(Input.GetMouseButtonDown(1) || mouseDown)
+        {
+            mouseDown = true;
+
+            Vector3 cameraPos = Camera.main.transform.position;
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            Vector3 screenPoint = ray.GetPoint(0);
+            Vector3 direction = Vector3.Normalize(screenPoint - cameraPos);
+
+            vertices[0] = cameraPos + (direction * (vertices[0] - cameraPos).magnitude);
+            mesh.vertices = vertices;
+            mesh.RecalculateNormals();
         }
 
     }
