@@ -624,6 +624,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cameraOrbit: {fileID: 439289002}
+  mesh: {fileID: 261650062}
   rotateSpeed: 20
 --- !u!4 &1016110700
 Transform:

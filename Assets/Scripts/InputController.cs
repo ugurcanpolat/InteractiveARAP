@@ -5,21 +5,23 @@ using UnityEngine;
 public class InputController : MonoBehaviour
 {
     public GameObject cameraOrbit;
+    public GameObject mesh;
 
     public float rotateSpeed = 20f;
 
-    Mesh mesh;
-    Vector3[] vertices;
-    bool mouseDown = false;
+    private Mesh meshFilter;
+    private Vector3[] vertices;
+    private bool mouseDown = false;
 
     void Start()
     {
-        mesh = GameObject.Find("Mesh").GetComponent<MeshFilter>().mesh;
-        vertices = mesh.vertices;
+        meshFilter = mesh.GetComponent<MeshFilter>().mesh;
+        vertices = meshFilter.vertices;
     }
 
     void Update()
     {
+        // Interaction input control   
         if (Input.GetMouseButton(0))
         {
             float h = rotateSpeed * Input.GetAxis("Mouse X");
@@ -43,14 +45,15 @@ public class InputController : MonoBehaviour
         if (scrollFactor != 0)
         {
             cameraOrbit.transform.localScale =
-                cameraOrbit.transform.localScale * (1f - scrollFactor);
+            cameraOrbit.transform.localScale * (1f - scrollFactor);
         }
 
-        // vertex movement
+        // Deformation control
         if(Input.GetMouseButtonUp(1))
         {
             mouseDown = false;
         }
+
         if(Input.GetMouseButtonDown(1) || mouseDown)
         {
             mouseDown = true;
@@ -60,9 +63,11 @@ public class InputController : MonoBehaviour
             Vector3 screenPoint = ray.GetPoint(0);
             Vector3 direction = Vector3.Normalize(screenPoint - cameraPos);
 
-            vertices[0] = cameraPos + (direction * (vertices[0] - cameraPos).magnitude);
-            mesh.vertices = vertices;
-            mesh.RecalculateNormals();
+            vertices[0] = cameraPos;
+            vertices[0] += direction * (vertices[0] - cameraPos).magnitude;
+
+            meshFilter.SetVertices(vertices);
+            meshFilter.RecalculateNormals();
         }
 
     }
