@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 public class Utilities
 {
-    static public void SaveMeshAsFile(Vector3[] vertices)
+    static public void SaveMeshAsFile(Vector3[] vertices, int[] triangles)
     {
         // TODO: Implement save function
 

@@ -71,7 +71,8 @@ public class ButtonHandler : MonoBehaviour
             Debug.Log("Save button is clicked.");
         #endif
 
-        Utilities.SaveMeshAsFile(mesh.GetComponent<MeshFilter>().mesh.vertices);
+        Mesh currentMesh = mesh.GetComponent<MeshFilter>().mesh;
+        Utilities.SaveMeshAsFile(currentMesh.vertices, currentMesh.triangles);
     }
 
     private void ButtonColorSet(GameObject button, float alpha)
