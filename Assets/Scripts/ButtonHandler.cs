@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-enum USAGE_MODE
+struct MESH_OPTIONS
 {
-    INTERACTION, DEFORMATION, OTHER
+    public const string ARMADILLO = "armadillo_1k";
+    public const string NONE = "None";
 };
 
 public class ButtonHandler : MonoBehaviour
@@ -20,7 +21,7 @@ public class ButtonHandler : MonoBehaviour
     private const float activeButtonAlpha = 1f;
     private const float disabledButtonAlpha = 100f / 255f;
 
-    private USAGE_MODE usageMode = USAGE_MODE.OTHER;
+    private string selectedMeshOption = MESH_OPTIONS.NONE;
 
     public void SelectClicked()
     {
@@ -33,10 +34,23 @@ public class ButtonHandler : MonoBehaviour
         ButtonColorSet(saveButton, disabledButtonAlpha);
 
         // TODO: Add mesh selection
-        Mesh selectedMesh = Resources.Load<Mesh>("armadillo_1k");
+
+        selectedMeshOption = MESH_OPTIONS.ARMADILLO;
+
+        if (selectedMeshOption == MESH_OPTIONS.NONE)
+        {
+            ButtonColorSet(selectButton, activeButtonAlpha);
+            mesh.GetComponent<MeshFilter>().mesh = null;
+
+            Debug.Log("Mesh is cleared.");
+
+            return;
+        }
+
+        Mesh selectedMesh = Resources.Load<Mesh>(selectedMeshOption);
         mesh.GetComponent<MeshFilter>().mesh = selectedMesh;
 
-        Debug.Log("Mesh is selected.");
+        Debug.Log("Mesh is selected: " + selectedMeshOption);
 
         EnableInteraction();
         meshSphere.SetActive(true);
@@ -48,6 +62,7 @@ public class ButtonHandler : MonoBehaviour
     public void SaveClicked()
     {
         // TODO: Add save mesh function
+
         Debug.Log("Save button is clicked.");
     }
 
@@ -59,11 +74,16 @@ public class ButtonHandler : MonoBehaviour
     private void EnableInteraction()
     {
         inputController.SetActive(true);
+
+        Debug.Log("Interaction is enabled.");
     }
 
     private void DisableInteraction()
     {
         // TODO: Set MeshSphere rotation to default and add an animation
+
         inputController.SetActive(false);
+
+        Debug.Log("Interaction is disabled.");
     }
 }
