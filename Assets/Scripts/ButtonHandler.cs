@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 struct MESH_OPTIONS
 {
@@ -18,10 +19,18 @@ public class ButtonHandler : MonoBehaviour
     public GameObject selectButton;
     public GameObject saveButton;
 
+    private Animator selectButtonAnimator;
+    private bool selectionMenuOn = false;
+
     private const float activeButtonAlpha = 1f;
     private const float disabledButtonAlpha = 100f / 255f;
 
     private string selectedMeshOption = MESH_OPTIONS.NONE;
+
+    private void Start()
+    {
+        selectButtonAnimator = selectButton.GetComponent<Animator>();
+    }
 
     public void SelectClicked()
     {
@@ -33,6 +42,9 @@ public class ButtonHandler : MonoBehaviour
         DisableInteraction();
         meshSphere.SetActive(false);
 
+        selectionMenuOn = !selectionMenuOn;
+        selectButtonAnimator.SetBool("SelectionMenuOn", selectionMenuOn);
+        EventSystem.current.SetSelectedGameObject(null);
         ButtonColorSet(saveButton, disabledButtonAlpha);
 
         // TODO: Add mesh selection
