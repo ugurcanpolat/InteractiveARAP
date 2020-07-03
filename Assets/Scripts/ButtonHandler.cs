@@ -29,10 +29,10 @@ public class ButtonHandler : MonoBehaviour
             Debug.Log("Select button is clicked.");
         #endif
 
+        ChangeButtonInteractivity(saveButton, false);
         DisableInteraction();
         meshSphere.SetActive(false);
 
-        ButtonColorSet(selectButton, disabledButtonAlpha);
         ButtonColorSet(saveButton, disabledButtonAlpha);
 
         // TODO: Add mesh selection
@@ -61,8 +61,8 @@ public class ButtonHandler : MonoBehaviour
         EnableInteraction();
         meshSphere.SetActive(true);
 
-        ButtonColorSet(selectButton, activeButtonAlpha);
         ButtonColorSet(saveButton, activeButtonAlpha);
+        ChangeButtonInteractivity(saveButton, true);
     }
 
     public void SaveClicked()
@@ -71,8 +71,14 @@ public class ButtonHandler : MonoBehaviour
             Debug.Log("Save button is clicked.");
         #endif
 
+        ChangeButtonInteractivity(selectButton, false);
+        ChangeButtonInteractivity(saveButton, false);
+
         Mesh currentMesh = mesh.GetComponent<MeshFilter>().mesh;
         Utilities.SaveMeshAsFile(currentMesh.vertices, currentMesh.triangles);
+
+        ChangeButtonInteractivity(selectButton, true);
+        ChangeButtonInteractivity(saveButton, true);
     }
 
     private void ButtonColorSet(GameObject button, float alpha)
@@ -82,6 +88,8 @@ public class ButtonHandler : MonoBehaviour
 
     private void EnableInteraction()
     {
+        // TODO: Set MeshSphere rotation to default and add an animation
+
         inputController.SetActive(true);
 
         #if UNITY_EDITOR
@@ -91,12 +99,20 @@ public class ButtonHandler : MonoBehaviour
 
     private void DisableInteraction()
     {
-        // TODO: Set MeshSphere rotation to default and add an animation
-
         inputController.SetActive(false);
 
         #if UNITY_EDITOR
             Debug.Log("Interaction is disabled.");
+        #endif
+    }
+
+    private void ChangeButtonInteractivity(GameObject buttonParent, bool state)
+    {
+        Button button = buttonParent.GetComponent<Button>();
+        button.interactable = state;
+
+        #if UNITY_EDITOR
+            Debug.Log(buttonParent.name + " interactivity set to: "+ state);
         #endif
     }
 }
