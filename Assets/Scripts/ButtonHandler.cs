@@ -67,11 +67,11 @@ public class ButtonHandler : MonoBehaviour
 
     public void SaveClicked()
     {
-        // TODO: Add save mesh function
-
         #if UNITY_EDITOR
             Debug.Log("Save button is clicked.");
         #endif
+
+        Utilities.SaveMeshAsFile(mesh.GetComponent<MeshFilter>().mesh.vertices);
     }
 
     private void ButtonColorSet(GameObject button, float alpha)
