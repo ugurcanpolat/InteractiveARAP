@@ -16,8 +16,6 @@ public class ButtonHandler : MonoBehaviour
 
     public GameObject selectButton;
     public GameObject saveButton;
-    public GameObject interactionButton;
-    public GameObject deformationButton;
 
     private const float activeButtonAlpha = 1f;
     private const float disabledButtonAlpha = 100f / 255f;
@@ -31,9 +29,8 @@ public class ButtonHandler : MonoBehaviour
         DisableInteraction();
         meshSphere.SetActive(false);
 
+        ButtonColorSet(selectButton, disabledButtonAlpha);
         ButtonColorSet(saveButton, disabledButtonAlpha);
-        ButtonColorSet(interactionButton, disabledButtonAlpha);
-        ButtonColorSet(deformationButton, disabledButtonAlpha);
 
         // TODO: Add mesh selection
         Mesh selectedMesh = Resources.Load<Mesh>("armadillo_1k");
@@ -44,47 +41,14 @@ public class ButtonHandler : MonoBehaviour
         EnableInteraction();
         meshSphere.SetActive(true);
 
+        ButtonColorSet(selectButton, activeButtonAlpha);
         ButtonColorSet(saveButton, activeButtonAlpha);
-        ButtonColorSet(interactionButton, activeButtonAlpha);
     }
 
     public void SaveClicked()
     {
         // TODO: Add save mesh function
         Debug.Log("Save button is clicked.");
-    }
-
-    public void InteractionClicked()
-    {
-        Debug.Log("Interaction mode button is clicked.");
-
-        if (usageMode == USAGE_MODE.INTERACTION)
-        {
-            return;
-        }
-
-        EnableInteraction();
-
-        ButtonColorSet(deformationButton, disabledButtonAlpha);
-        ButtonColorSet(interactionButton, activeButtonAlpha);
-    }
-
-    public void DeformationClicked()
-    {
-        Debug.Log("Deformation mode button is clicked.");
-
-        if (usageMode == USAGE_MODE.DEFORMATION)
-        {
-            return;
-        }
-
-        DisableInteraction();
-
-        // TODO: Add deformation mode
-        usageMode = USAGE_MODE.DEFORMATION;
-
-        ButtonColorSet(interactionButton, disabledButtonAlpha);
-        ButtonColorSet(deformationButton, activeButtonAlpha);
     }
 
     private void ButtonColorSet(GameObject button, float alpha)
@@ -94,23 +58,12 @@ public class ButtonHandler : MonoBehaviour
 
     private void EnableInteraction()
     {
-        if (usageMode == USAGE_MODE.INTERACTION)
-        {
-            return;
-        }
-
         inputController.SetActive(true);
-        usageMode = USAGE_MODE.INTERACTION;
     }
 
     private void DisableInteraction()
     {
-        if (usageMode == USAGE_MODE.INTERACTION)
-        {
-            inputController.SetActive(false);
-        }
-
         // TODO: Set MeshSphere rotation to default and add an animation
-        usageMode = USAGE_MODE.OTHER;
+        inputController.SetActive(false);
     }
 }
