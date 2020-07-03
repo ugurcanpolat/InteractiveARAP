@@ -25,7 +25,9 @@ public class ButtonHandler : MonoBehaviour
 
     public void SelectClicked()
     {
-        Debug.Log("Select button is clicked.");
+        #if UNITY_EDITOR
+            Debug.Log("Select button is clicked.");
+        #endif
 
         DisableInteraction();
         meshSphere.SetActive(false);
@@ -42,7 +44,9 @@ public class ButtonHandler : MonoBehaviour
             ButtonColorSet(selectButton, activeButtonAlpha);
             mesh.GetComponent<MeshFilter>().mesh = null;
 
-            Debug.Log("Mesh is cleared.");
+            #if UNITY_EDITOR
+                Debug.Log("Mesh is cleared.");
+            #endif
 
             return;
         }
@@ -50,7 +54,9 @@ public class ButtonHandler : MonoBehaviour
         Mesh selectedMesh = Resources.Load<Mesh>(selectedMeshOption);
         mesh.GetComponent<MeshFilter>().mesh = selectedMesh;
 
-        Debug.Log("Mesh is selected: " + selectedMeshOption);
+        #if UNITY_EDITOR
+            Debug.Log("Mesh is selected: " + selectedMeshOption);
+        #endif
 
         EnableInteraction();
         meshSphere.SetActive(true);
@@ -63,7 +69,9 @@ public class ButtonHandler : MonoBehaviour
     {
         // TODO: Add save mesh function
 
-        Debug.Log("Save button is clicked.");
+        #if UNITY_EDITOR
+            Debug.Log("Save button is clicked.");
+        #endif
     }
 
     private void ButtonColorSet(GameObject button, float alpha)
@@ -75,7 +83,9 @@ public class ButtonHandler : MonoBehaviour
     {
         inputController.SetActive(true);
 
-        Debug.Log("Interaction is enabled.");
+        #if UNITY_EDITOR
+            Debug.Log("Interaction is enabled.");
+        #endif
     }
 
     private void DisableInteraction()
@@ -84,6 +94,8 @@ public class ButtonHandler : MonoBehaviour
 
         inputController.SetActive(false);
 
-        Debug.Log("Interaction is disabled.");
+        #if UNITY_EDITOR
+            Debug.Log("Interaction is disabled.");
+        #endif
     }
 }
