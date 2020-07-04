@@ -20,7 +20,7 @@ public class ButtonHandler : MonoBehaviour
     public GameObject saveButton;
 
     private Animator selectButtonAnimator;
-    private bool selectionMenuOn = false;
+    private bool isSelectionMenuOn = false;
 
     private const float activeButtonAlpha = 1f;
     private const float disabledButtonAlpha = 100f / 255f;
@@ -42,8 +42,8 @@ public class ButtonHandler : MonoBehaviour
         DisableInteraction();
         meshSphere.SetActive(false);
 
-        selectionMenuOn = !selectionMenuOn;
-        selectButtonAnimator.SetBool("SelectionMenuOn", selectionMenuOn);
+        isSelectionMenuOn = !isSelectionMenuOn;
+        selectButtonAnimator.SetBool("SelectionMenuOn", isSelectionMenuOn);
         EventSystem.current.SetSelectedGameObject(null);
 
         // TODO: Add mesh selection
