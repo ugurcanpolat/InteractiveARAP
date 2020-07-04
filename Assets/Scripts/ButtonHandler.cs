@@ -45,7 +45,6 @@ public class ButtonHandler : MonoBehaviour
         selectionMenuOn = !selectionMenuOn;
         selectButtonAnimator.SetBool("SelectionMenuOn", selectionMenuOn);
         EventSystem.current.SetSelectedGameObject(null);
-        ButtonColorSet(saveButton, disabledButtonAlpha);
 
         // TODO: Add mesh selection
 
@@ -53,7 +52,6 @@ public class ButtonHandler : MonoBehaviour
 
         if (selectedMeshOption == MESH_OPTIONS.NONE)
         {
-            ButtonColorSet(selectButton, activeButtonAlpha);
             mesh.GetComponent<MeshFilter>().mesh = null;
 
             #if UNITY_EDITOR
@@ -73,7 +71,6 @@ public class ButtonHandler : MonoBehaviour
         EnableInteraction();
         meshSphere.SetActive(true);
 
-        ButtonColorSet(saveButton, activeButtonAlpha);
         ChangeButtonInteractivity(saveButton, true);
     }
 
@@ -91,11 +88,6 @@ public class ButtonHandler : MonoBehaviour
 
         ChangeButtonInteractivity(selectButton, true);
         ChangeButtonInteractivity(saveButton, true);
-    }
-
-    private void ButtonColorSet(GameObject button, float alpha)
-    {
-        button.GetComponent<Image>().color = new Color(255, 255, 225, alpha);
     }
 
     private void EnableInteraction()
