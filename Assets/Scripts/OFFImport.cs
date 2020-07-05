@@ -17,7 +17,6 @@ public class OFFImport : MonoBehaviour
         vertex = new List<Vector3>();
         area = new List<Vector3>();
         ParseFile(path);
-        CreateMesh();
     }
 
     private string line;
@@ -25,6 +24,8 @@ public class OFFImport : MonoBehaviour
     private bool infoLine = false;
 
     private int lineNum = 0;
+    private int vertexNum = 0;
+    private int areaNum = 0;
 
     void ParseFile(string filepath)
     {
@@ -38,7 +39,6 @@ public class OFFImport : MonoBehaviour
             if (lineNum == 1 && line == "OFF")
             {
                 OFFLine = true;
-                Debug.Log("OFF");
                 continue;
             }
             else if (lineNum == 1 && line != "OFF")
@@ -49,7 +49,10 @@ public class OFFImport : MonoBehaviour
 
             // Ignore all comments and empty lines
             if (line[0] == '#' || line == "")
+            {
+                Debug.Log("Ignored line " + lineNum + " while parsing the .off file.");
                 continue;
+            }
 
             // Parse Corners, Areas and Edges
             if(OFFLine && !infoLine)
@@ -65,17 +68,17 @@ public class OFFImport : MonoBehaviour
             
             string[] s = line.Split(' ');
             // Parse Vertecis and Areas
-            if(s.Length == 3)
+            if (s.Length == 4 && vertexNum < corners)
             {
-                Debug.Log(s[0]);
-                break;
+                vertexNum++;
                 // Vertex
-               // Vector3 v = new Vector3(Convert.ToDouble(s[0]), float.Parse(s[1]), float.Parse(s[2]));
-               // vertex.Add(v);
-            } else if (s.Length == 4)
+                Vector3 v = new Vector3(float.Parse(s[0], System.Globalization.CultureInfo.InvariantCulture), float.Parse(s[1], System.Globalization.CultureInfo.InvariantCulture), float.Parse(s[2], System.Globalization.CultureInfo.InvariantCulture));
+                vertex.Add(v);
+            } else if (vertexNum >= corners && areaNum < areas)
             {
+                areaNum++;
                 // Area Boundary
-                Vector3 v = new Vector3(float.Parse(s[1]), float.Parse(s[2]), float.Parse(s[3]));
+                Vector3 v = new Vector3(float.Parse(s[0], System.Globalization.CultureInfo.InvariantCulture), float.Parse(s[1], System.Globalization.CultureInfo.InvariantCulture), float.Parse(s[2], System.Globalization.CultureInfo.InvariantCulture));
                 area.Add(v);
             }
 
@@ -83,9 +86,24 @@ public class OFFImport : MonoBehaviour
         }
     }
 
-    void CreateMesh()
+    private Vector3[] ListToArray(List<Vector3> list)
     {
-        Debug.Log(vertex[0]);
+        Vector3[] a = new Vector3[list.Count];
+        for (int i = 0; i < list.Count; i++)
+        {
+            a[i] = list[i];
+        }
+        return a;
+    }
+
+    // Builds a Mesh object based on https://docs.unity3d.com/ScriptReference/Mesh.html
+    Mesh CreateMesh()
+    {
+        Mesh m = new Mesh();
+        m.vertices = ListToArray(vertex);
+        m.triangles = ListToArray(area);
+
+
     }
 
 }
