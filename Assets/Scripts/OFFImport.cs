@@ -86,7 +86,7 @@ public class OFFImport : MonoBehaviour
         }
     }
 
-    private Vector3[] ListToArray(List<Vector3> list)
+    private Vector3[] ListToVertexArray(List<Vector3> list)
     {
         Vector3[] a = new Vector3[list.Count];
         for (int i = 0; i < list.Count; i++)
@@ -96,14 +96,30 @@ public class OFFImport : MonoBehaviour
         return a;
     }
 
+    private int[] ListToIntArray(List<Vector3> list)
+    {
+        int[] a = new int[list.Count * 3];
+        int j = 0;
+        for(int i = 0; i < list.Count; i++)
+        {
+            a[j] = (int) list[i].x;
+            j++;
+            a[j] = (int)list[i].y;
+            j++;
+            a[j] = (int)list[i].z;
+            j++;
+        }
+        return a;
+    }
+
     // Builds a Mesh object based on https://docs.unity3d.com/ScriptReference/Mesh.html
     Mesh CreateMesh()
     {
         Mesh m = new Mesh();
-        m.vertices = ListToArray(vertex);
-        m.triangles = ListToArray(area);
+        m.vertices = ListToVertexArray(vertex);
+        m.triangles = ListToIntArray(area);
 
-
+        return m;
     }
 
 }
