@@ -22,11 +22,11 @@ public class Utilities
     {
         StringBuilder sb = new StringBuilder();
         sb.Append(string.Format("OFF"));
-        sb.Append(string.Format("\n{0},{1},{2}" , vertices.Length , (triangles.Length) / 3, 0));
+        sb.Append(string.Format("\n{0} {1} {2}" , vertices.Length , (triangles.Length) / 3, 0));
         sb.Append(string.Format("\n"));
         foreach (Vector3 v in vertices)
         {
-            sb.Append(string.Format("{0} {1} {2}\n", v.x, v.y, v.z));
+            sb.Append(string.Format("{0} {1} {2} \n", v.x, v.y, v.z));
         }
         
         for (int i = 0; i < (triangles.Length) / 3; i += 1)
