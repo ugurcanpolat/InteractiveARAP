@@ -63,8 +63,8 @@ public class InputController : MonoBehaviour
             Vector3 screenPoint = ray.GetPoint(0);
             Vector3 direction = Vector3.Normalize(screenPoint - cameraPos);
 
-            vertices[0] = cameraPos;
-            vertices[0] += direction * (vertices[0] - cameraPos).magnitude;
+            vertices[0] = cameraPos +
+                direction * (vertices[0] - cameraPos).magnitude;
 
             meshFilter.SetVertices(vertices);
             meshFilter.RecalculateNormals();
