@@ -22,7 +22,7 @@ public class InputController : MonoBehaviour
     void Update()
     {
         // Interaction input control   
-        if (Input.GetMouseButton(0))
+        if (Input.GetMouseButton(1))
         {
             float h = rotateSpeed * Input.GetAxis("Mouse X");
             float v = rotateSpeed * Input.GetAxis("Mouse Y");
@@ -46,28 +46,6 @@ public class InputController : MonoBehaviour
         {
             cameraOrbit.transform.localScale =
             cameraOrbit.transform.localScale * (1f - scrollFactor);
-        }
-
-        // Deformation control
-        if(Input.GetMouseButtonUp(1))
-        {
-            mouseDown = false;
-        }
-
-        if(Input.GetMouseButtonDown(1) || mouseDown)
-        {
-            mouseDown = true;
-
-            Vector3 cameraPos = Camera.main.transform.position;
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            Vector3 screenPoint = ray.GetPoint(0);
-            Vector3 direction = Vector3.Normalize(screenPoint - cameraPos);
-
-            vertices[0] = cameraPos;
-            vertices[0] += direction * (vertices[0] - cameraPos).magnitude;
-
-            meshFilter.SetVertices(vertices);
-            meshFilter.RecalculateNormals();
         }
 
     }

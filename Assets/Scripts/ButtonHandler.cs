@@ -72,6 +72,7 @@ public class ButtonHandler : MonoBehaviour
         meshSphere.SetActive(true);
 
         ChangeButtonInteractivity(saveButton, true);
+        GameObject.Find("Image").GetComponent<DragSelectionHandler>().newMesh();
     }
 
     public void SaveClicked()
