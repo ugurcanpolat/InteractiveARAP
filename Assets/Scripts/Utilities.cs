@@ -56,6 +56,7 @@ public class Utilities
             }
 
             string[] s = line.Split(' ');
+
             // Parse numbers of vertices and faces
             if (is_off_line && !is_info_line)
             {
@@ -69,7 +70,7 @@ public class Utilities
             }
 
             // Parse Vertices and Faces
-            if (s.Length == 4 && vertex_count < num_vertices)
+            if (vertex_count < num_vertices)
             {
                 // Vertex
                 Vector3 v = new Vector3(
