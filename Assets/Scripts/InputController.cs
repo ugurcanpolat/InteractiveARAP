@@ -13,7 +13,7 @@ public class InputController : MonoBehaviour
     private Vector3[] vertices;
     private bool mouseDown = false;
 
-    void Start()
+    void OnEnable()
     {
         meshFilter = mesh.GetComponent<MeshFilter>().mesh;
         vertices = meshFilter.vertices;

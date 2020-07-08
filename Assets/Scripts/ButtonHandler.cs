@@ -7,6 +7,7 @@ using UnityEngine.EventSystems;
 struct MESH_OPTIONS
 {
     public const string ARMADILLO = "Assets/Resources/armadillo_1k.off";
+    public const string CACTUS = "Assets/Resources/cactus_small.off";
     public const string NONE = "None";
 };
 
