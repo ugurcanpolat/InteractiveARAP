@@ -6,7 +6,7 @@ using UnityEngine.EventSystems;
 
 struct MESH_OPTIONS
 {
-    public const string ARMADILLO = "armadillo_1k";
+    public const string ARMADILLO = "Assets/Resources/armadillo_1k.off";
     public const string NONE = "None";
 };
 
@@ -61,7 +61,8 @@ public class ButtonHandler : MonoBehaviour
             return;
         }
 
-        Mesh selectedMesh = Resources.Load<Mesh>(selectedMeshOption);
+        Mesh selectedMesh = Utilities.CreateMeshFromOFFFile(selectedMeshOption);
+
         mesh.GetComponent<MeshFilter>().mesh = selectedMesh;
 
         #if UNITY_EDITOR
