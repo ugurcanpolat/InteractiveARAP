@@ -13,10 +13,14 @@ public class InputController : MonoBehaviour
     private Vector3[] vertices;
     private bool mouseDown = false;
 
-    void Start()
+    public ARAP arap;
+
+    public void newMesh()
     {
         meshFilter = mesh.GetComponent<MeshFilter>().mesh;
         vertices = meshFilter.vertices;
+        arap = new ARAP();
+        arap.newMesh();
     }
 
     void Update()
@@ -68,6 +72,10 @@ public class InputController : MonoBehaviour
 
             meshFilter.SetVertices(vertices);
             meshFilter.RecalculateNormals();
+        }
+        if(Input.GetKeyDown("return"))
+        {
+            arap.calculateARAPmesh(vertices[0], 0);
         }
 
     }

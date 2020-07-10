@@ -73,6 +73,9 @@ public class ButtonHandler : MonoBehaviour
         meshSphere.SetActive(true);
 
         ChangeButtonInteractivity(saveButton, true);
+        GameObject inControl = GameObject.Find("InputController");
+        InputController ic = inControl.GetComponent<InputController>();
+        ic.newMesh();
     }
 
     public void SaveClicked()
