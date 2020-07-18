@@ -6,6 +6,7 @@ public class ARAP
 {
     private Mesh mesh;
     private Vector3[] vertices;
+    private int[] rightFootIndices = {0,36,48,67,81,94,109,110,137,179,181,189,206,209,216,229,231,232,235,239,240,241,293,296,307,316,328,356,380,412,518,601,818};
 
     public void newMesh()
     {

@@ -12,6 +12,7 @@ public class InputController : MonoBehaviour
     private Mesh meshFilter;
     private Vector3[] vertices;
     private bool mouseDown = false;
+    private int leftHandIndex = 770;
 
     public ARAP arap;
 
@@ -67,15 +68,15 @@ public class InputController : MonoBehaviour
             Vector3 screenPoint = ray.GetPoint(0);
             Vector3 direction = Vector3.Normalize(screenPoint - cameraPos);
 
-            vertices[0] = cameraPos +
-                direction * (vertices[0] - cameraPos).magnitude;
+            vertices[leftHandIndex] = cameraPos +
+                direction * (vertices[leftHandIndex] - cameraPos).magnitude;
 
             meshFilter.SetVertices(vertices);
             meshFilter.RecalculateNormals();
         }
         if(Input.GetKeyDown("return"))
         {
-            arap.calculateARAPmesh(vertices[0], 0);
+            arap.calculateARAPmesh(vertices[leftHandIndex], leftHandIndex);
         }
 
     }
