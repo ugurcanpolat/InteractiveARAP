@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using MathNet.Numerics.LinearAlgebra;
 
 public class ARAP
 {
@@ -16,7 +17,7 @@ public class ARAP
 
     public void calculateARAPmesh(Vector3 targetPosition, int vertexIndex)
     {
-        // TODO calculate static ARAP here
+        // non rigid deformation as initial guess
         Vector3 targetDistance = targetPosition - vertices[vertexIndex];
         Vector3 startPosition = vertices[vertexIndex];
         float maxDistance = 0.0f;
@@ -33,8 +34,26 @@ public class ARAP
             vertices[i] += targetDistance * (1 - originalDistance);
         }
 
-
-
+        // ARAP calculations
+        float energyImprovement = 0.0f;
+        float improvementThreshhold = 0.1f;
+        Matrix<float> R = Matrix<float>.Build.Dense(3,3);
+        while(energyImprovement < improvementThreshhold)
+        {
+            float energy = 0.0f;
+            // calculate the rotation
+            // calculate new positions
+            // calculate new energy
+            //for(/* all vertices */)
+            //{
+                //for(/* all neighbors */)
+                //{
+                    //newEnergy = ((transformedVertex - transformedNeighbor) - R * (vertex - neighbor)).Length 
+                    //energyImprovement = energy - newEnergy
+                //}
+            //}
+        }
+        
         mesh.SetVertices(vertices);
         vertices = mesh.vertices;
         mesh.RecalculateNormals();
