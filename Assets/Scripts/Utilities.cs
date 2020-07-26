@@ -3,18 +3,19 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using MathNet.Numerics.LinearAlgebra;
 
 public class Utilities
 {
     static public void SaveMeshAsFile(Vector3[] vertices, int[] triangles)
     {
-        // TODO: Implement save function
-        using (StreamWriter sw = new StreamWriter("armadillo" /*change with mesh_options.armadillo */ + "_saved.off"))
+        // TODO: Generalize the naming for different meshes
+        using (StreamWriter sw = new StreamWriter("armadillo_saved.off"))
         {
             sw.Write(MeshExportAsOff(vertices, triangles));
         }
-#if UNITY_EDITOR
-        Debug.Log("Mesh is saved.");
+        #if UNITY_EDITOR
+            Debug.Log("Mesh is saved.");
         #endif
     }
 
@@ -159,5 +160,27 @@ public class Utilities
         mesh.RecalculateNormals();
 
         return mesh;
+    }
+
+    // Convert from Unity Vector3 to Math.Net Vector
+    static public Vector<double> ConvertFromUVectorToMNVector(Vector3 unityVec)
+    {
+        Vector<double> mathNetVec = Vector<double>.Build.Dense(3);
+        mathNetVec[0] = unityVec.x;
+        mathNetVec[1] = unityVec.y;
+        mathNetVec[2] = unityVec.z;
+
+        return mathNetVec;
+    }
+
+    // Convert from Math.Net Vector to Unity Vector3
+    static public Vector3 ConvertFromMNVectorToUVector(Vector<double> mathNetVec)
+    {
+        Vector3 unityVec;
+        unityVec.x = (float) mathNetVec[0];
+        unityVec.y = (float) mathNetVec[1];
+        unityVec.z = (float) mathNetVec[2];
+
+        return unityVec;
     }
 }
