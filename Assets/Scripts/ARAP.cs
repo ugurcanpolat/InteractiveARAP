@@ -116,12 +116,23 @@ public class ARAP
             i=t++;
             j=t++;
             k=t++;
-            L[i,j] = 0.5f * cotangents[0];
-            L[j,i] = 0.5f * cotangents[0];
-            L[i,k] = 0.5f * cotangents[1];
-            L[k,i] = 0.5f * cotangents[1];
-            L[j,k] = 0.5f * cotangents[2];
-            L[k,j] = 0.5f * cotangents[2];
+            // TODO only fill once (do we have open fans?)
+            L[i,j] = -0.5f * cotangents[0];
+            L[j,i] = -0.5f * cotangents[0];
+            L[i,k] = -0.5f * cotangents[1];
+            L[k,i] = -0.5f * cotangents[1];
+            L[j,k] = -0.5f * cotangents[2];
+            L[k,j] = -0.5f * cotangents[2];
+        }
+        for(int i=0; i<vertices.Length; i++)
+        {
+            for(int j=0; j<vertices.Length; j++)
+            {
+                if(i != j)
+                {
+                    L[i,i] += L[i,j];
+                }
+            }
         }
 
         while(energyImprovement < improvementThreshhold)
