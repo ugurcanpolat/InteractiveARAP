@@ -67,11 +67,25 @@ public class ARAP
         
     }
 
-    public void calculateARAPmesh(Vector3 targetPosition, int vertexIndex)
+    private float[] computeCotangents(int triIndex)
     {
-        
-        
-        /*
+        float[] cotangents = {0.0f, 0.0f, 0.0f};
+        Vector3 A = mesh.vertices[mesh.triangles[triIndex]];
+        Vector3 B = mesh.vertices[mesh.triangles[triIndex+1]];
+        Vector3 C = mesh.vertices[mesh.triangles[triIndex+2]];
+        float aSquared = (float) Math.Pow(((B - C).magnitude), 2.0f);
+        float bSquared = (float) Math.Pow(((C - A).magnitude), 2.0f);
+        float cSquared = (float) Math.Pow(((A - B).magnitude), 2.0f);
+        float area4 = Vector3.Cross(B - A, C - A).magnitude * 2.0f;
+
+        cotangents[0] = (bSquared + cSquared - aSquared) / area4;
+        cotangents[1] = (cSquared + aSquared - bSquared) / area4;
+        cotangents[2] = (aSquared + bSquared - cSquared) / area4;
+        return cotangents;
+    }
+
+    public void calculateARAPmesh(Vector3 targetPosition, int vertexIndex)
+    {    
         // non rigid deformation as initial guess
         Vector3 targetDistance = targetPosition - vertices[vertexIndex];
         Vector3 startPosition = vertices[vertexIndex];
@@ -93,6 +107,23 @@ public class ARAP
         float energyImprovement = 0.0f;
         float improvementThreshhold = 0.1f;
         Matrix<float> R = Matrix<float>.Build.Dense(3,3);
+        Matrix<float> L = Matrix<float>.Build.Dense(vertices.Length, vertices.Length);
+        // calculate weights
+        for(int t=0; t<mesh.triangles.Length;)
+        {
+            float[] cotangents = computeCotangents(t);
+            int i,j,k;
+            i=t++;
+            j=t++;
+            k=t++;
+            L[i,j] = 0.5f * cotangents[0];
+            L[j,i] = 0.5f * cotangents[0];
+            L[i,k] = 0.5f * cotangents[1];
+            L[k,i] = 0.5f * cotangents[1];
+            L[j,k] = 0.5f * cotangents[2];
+            L[k,j] = 0.5f * cotangents[2];
+        }
+
         while(energyImprovement < improvementThreshhold)
         {
             float energy = 0.0f;
@@ -112,6 +143,5 @@ public class ARAP
         mesh.SetVertices(vertices);
         vertices = mesh.vertices;
         mesh.RecalculateNormals();
-        */
     }
 }
