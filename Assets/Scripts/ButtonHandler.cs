@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using MathNet.Numerics.LinearAlgebra;
 
 struct MESH_OPTIONS
 {
@@ -22,8 +23,8 @@ public class ButtonHandler : MonoBehaviour
     private Animator selectButtonAnimator;
     private bool isSelectionMenuOn = false;
 
-    private const float activeButtonAlpha = 1f;
-    private const float disabledButtonAlpha = 100f / 255f;
+    private Matrix<float> cells;
+    private List<List<int>> neighbors;
 
     private string selectedMeshOption = MESH_OPTIONS.NONE;
 
@@ -62,6 +63,8 @@ public class ButtonHandler : MonoBehaviour
         }
 
         Mesh selectedMesh = Utilities.CreateMeshFromOFFFile(selectedMeshOption);
+        cells = Utilities.CreateCells(selectedMesh.triangles, selectedMesh.vertexCount);
+        neighbors = Utilities.CreateNeighbors(cells);
 
         mesh.GetComponent<MeshFilter>().mesh = selectedMesh;
 

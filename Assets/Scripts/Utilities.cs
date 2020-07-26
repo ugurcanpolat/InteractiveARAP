@@ -71,7 +71,7 @@ public class Utilities
     static public Mesh CreateMeshFromOFFFile(string file_path)
     {
         System.IO.StreamReader MyReader = new System.IO.StreamReader(file_path);
-
+        
         List<Vector3> vertices = new List<Vector3>();
         int[] faces = null;
 
@@ -161,6 +161,106 @@ public class Utilities
 
         return mesh;
     }
+
+    static public Matrix<float> CreateCells(int[] faces, int verticesLength)
+    {
+        Matrix<float> cells = Matrix<float>.Build.Sparse(verticesLength,
+                                                         verticesLength);
+
+        for (int i = 0; i < faces.Length; i += 3)
+        {
+            cells[faces[i], faces[i+1]] = 1;
+            cells[faces[i], faces[i+2]] = 1;
+            cells[faces[i+1], faces[i]] = 1;
+            cells[faces[i+1], faces[i+2]] = 1;
+            cells[faces[i+2], faces[i]] = 1;
+            cells[faces[i+2], faces[i+1]] = 1;
+        }
+
+        return cells;
+    }
+
+    static public void WriteCellsToFile(Matrix<float> cells,
+                                        string fName = "armadillo_1k_cells.txt")
+    {
+        StringBuilder sb = new StringBuilder();
+        Vector<float> rowSums = cells.RowSums();
+
+        for (int i = 0; i < cells.RowCount; i++)
+        {
+            int currentRowSum = 0;
+            for (int j = 0; j < cells.ColumnCount; j++)
+            {
+                if (cells[i, j] == 1)
+                {
+                    sb.Append(string.Format("{0}", j));
+                    currentRowSum++;
+
+                    if (currentRowSum == rowSums[i])
+                    {
+                        sb.Append(string.Format("\n"));
+                        break;
+                    }
+                    else
+                    {
+                        sb.Append(string.Format(" "));
+                    }
+                }
+
+            }
+        }
+
+        using (StreamWriter sw = new StreamWriter("Assets/Resources/" + fName))
+        {
+            sw.Write(sb.ToString());
+        }
+    }
+
+    static public Matrix<float> ReadCellsFromFile(int verticesLength,
+                                                string fName = "armadillo_1k_cells.txt")
+    {
+        Matrix<float> cells = Matrix<float>.Build.Sparse(verticesLength,
+                                                         verticesLength);
+
+        System.IO.StreamReader MyReader = new System.IO.StreamReader(
+            "Assets/Resources/" + fName);
+    
+        string line;
+
+        for (int i = 0;  (line = MyReader.ReadLine()) != null; i++)
+        {
+            string[] indices = line.Split(' ');
+            foreach (string j_s in indices) {
+                int j = int.Parse(j_s,
+                    System.Globalization.CultureInfo.InvariantCulture);
+                cells[i, j] = 1;
+            }
+        }
+
+        return cells;
+    }
+
+
+    static public List<List<int>> CreateNeighbors(Matrix<float> cells)
+    {
+        List<List<int>> neighbors = new List<List<int>>();
+
+        for (int i = 0; i < cells.RowCount; i++)
+        {
+            List<int> currentRowNeighbors = new List<int>();
+            for (int j = 0; j < cells.ColumnCount; j++)
+            {
+                if (cells[i,j] == 1)
+                {
+                    currentRowNeighbors.Add(j);
+                }
+            }
+            neighbors.Add(currentRowNeighbors);
+        }
+
+        return neighbors;
+    }
+
 
     // Convert from Unity Vector3 to Math.Net Vector
     static public Vector<double> ConvertFromUVectorToMNVector(Vector3 unityVec)
