@@ -97,6 +97,11 @@ public class ButtonHandler : MonoBehaviour
         ChangeButtonInteractivity(saveButton, true);
     }
 
+    public List<List<int>> GetNeighbors()
+    {
+        return neighbors;
+    }
+
     private void EnableInteraction()
     {
         // TODO: Set MeshSphere rotation to default and add an animation

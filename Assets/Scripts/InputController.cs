@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class InputController : MonoBehaviour
 {
+    public GameObject controlPanel;
     public GameObject cameraOrbit;
     public GameObject mesh;
 
@@ -14,7 +15,11 @@ public class InputController : MonoBehaviour
     private bool mouseDown = false;
     private int leftHandIndex = 770;
 
-    public ARAP arap;
+    private ButtonHandler buttonHandler;
+    private List<List<int>> neighbors;
+
+    private ARAP arap;
+    private ARAPDeformation arapDeformation;
 
     public void newMesh()
     {
@@ -22,6 +27,13 @@ public class InputController : MonoBehaviour
         vertices = meshFilter.vertices;
         arap = new ARAP();
         arap.newMesh();
+    }
+
+    void Start()
+    {
+        buttonHandler = controlPanel.GetComponent<ButtonHandler>();
+        neighbors = buttonHandler.GetNeighbors();
+        arapDeformation = new ARAPDeformation(meshFilter, neighbors);
     }
 
     void Update()
