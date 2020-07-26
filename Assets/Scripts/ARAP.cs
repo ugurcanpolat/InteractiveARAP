@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using MathNet.Numerics.LinearAlgebra;
+using System;
 
 public class ARAP
 {
@@ -17,8 +18,6 @@ public class ARAP
 
     private float[] computeCotangents(int triIndex)
     {
-<<<<<<< HEAD
-=======
         float[] cotangents = {0.0f, 0.0f, 0.0f};
         Vector3 A = mesh.vertices[mesh.triangles[triIndex]];
         Vector3 B = mesh.vertices[mesh.triangles[triIndex+1]];
@@ -36,7 +35,6 @@ public class ARAP
 
     public void calculateARAPmesh(Vector3 targetPosition, int vertexIndex)
     {    
->>>>>>> d001000... Add weight calculation
         // non rigid deformation as initial guess
         Vector3 targetDistance = targetPosition - vertices[vertexIndex];
         Vector3 startPosition = vertices[vertexIndex];
@@ -67,12 +65,23 @@ public class ARAP
             i=t++;
             j=t++;
             k=t++;
-            L[i,j] = 0.5f * cotangents[0];
-            L[j,i] = 0.5f * cotangents[0];
-            L[i,k] = 0.5f * cotangents[1];
-            L[k,i] = 0.5f * cotangents[1];
-            L[j,k] = 0.5f * cotangents[2];
-            L[k,j] = 0.5f * cotangents[2];
+            // TODO only fill once (do we have open fans?)
+            L[i,j] = -0.5f * cotangents[0];
+            L[j,i] = -0.5f * cotangents[0];
+            L[i,k] = -0.5f * cotangents[1];
+            L[k,i] = -0.5f * cotangents[1];
+            L[j,k] = -0.5f * cotangents[2];
+            L[k,j] = -0.5f * cotangents[2];
+        }
+        for(int i=0; i<vertices.Length; i++)
+        {
+            for(int j=0; j<vertices.Length; j++)
+            {
+                if(i != j)
+                {
+                    L[i,i] += L[i,j];
+                }
+            }
         }
 
         while(energyImprovement < improvementThreshhold)
