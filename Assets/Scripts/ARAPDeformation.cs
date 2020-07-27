@@ -130,8 +130,64 @@ public class ARAPDeformation
         Matrix<double> left = A.Transpose() * A;
         LU<double> naive_lap_solver = left.LU();
 
-        return;
+        Matrix<double> meshMatrix = Matrix<double>.Build.Dense(
+            mesh_vertices.Count, 3);
+        Matrix<double> fixedMatrix = Matrix<double>.Build.Dense(
+            fixed_vertex_count, 3);
 
+        for (int i = 0; i < mesh_vertices.Count; i++)
+        {
+            meshMatrix.SetRow(i, mesh_vertices[i]);
+            if (i < fixed_vertex_count)
+            {
+                fixedMatrix.SetRow(i, mesh_vertices[fixed_vertices[i]]);
+            }
+        }
+
+        // Build A' * (-By + weight_ * p).
+        for (int c = 0; c < 3; c++)
+        {
+            Vector<double> b = weights * meshMatrix.Column(c) - B * fixedMatrix.Column(c);
+            Vector<double> right = A.Transpose() * b;
+            Vector<double> x = naive_lap_solver.Solve(right);
+
+            // Write back the solution.
+            for (int i = 0; i < free_vertex_count; ++i)
+            {
+                deformed_vertices[free_vertices[i]][c] = x[i];
+            }
+        }
+
+        // Write back fixed vertices constraints.
+        for (int i = 0; i < fixed_vertex_count; i++)
+        {
+            deformed_vertices[fixed_vertices[i]] = mesh_vertices[fixed_vertices[i]];
+        }
+
+        // Initialize rotations_ with vertices_updated_.
+        List<Matrix<double>> edge_product = new List<Matrix<double>>();
+        for (int i = 0; i < mesh_vertices.Count; i++)
+        {
+            Matrix<double> edge_product_ = Matrix<double>.Build.Dense(3, 3);
+            foreach (int j in neighbors[i])
+            {
+                double weight = weights[i, j];
+                Matrix<double> edge = mesh_vertices[i].ToRowMatrix() - mesh_vertices[j].ToRowMatrix();
+                Matrix<double> edge_update =
+                  deformed_vertices[i].ToRowMatrix() - deformed_vertices[j].ToRowMatrix();
+                
+                edge_product_ += weight * edge * edge_update.Transpose();
+                edge_product.Add(edge_product_);
+            }
+        }
+
+        rotations.Clear();
+        for (int v = 0; v < mesh_vertices.Count; ++v)
+        {
+            Svd<double> svd = edge_product[v].Svd(true);
+            Matrix<double> rotation = svd.U.Transpose() * svd.VT.Transpose();
+            rotations.Add(rotation.Transpose());
+        }
     }
 
     private void ComputePositions()
