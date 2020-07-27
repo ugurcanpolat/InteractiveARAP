@@ -227,26 +227,26 @@ public class ARAPDeformation
     private double ComputeEnergy()
     {
         double total_energy = 0.0;
-        //for (int i = 0; i < mesh.vertexCount; ++i)
-        //{
-        //    foreach (int neighbor in neighbors[i])
-        //    {
-        //        int j = neighbor.first;
-        //        double weight = weight_.coeff(i, j);
-        //        double edge_energy = 0.0d;
-        //        Vector3 vec = (vertices_updated_.row(i) -
-        //            vertices_updated_.row(j)).transpose() -
-        //            rotations_[i] * (vertices_.row(i) -
-        //            vertices_.row(j)).transpose();
-        //        edge_energy = weight * vec.squaredNorm();
-        //        total += edge_energy;
-        //    }
-        //}
+        for (int i = 0; i < mesh.vertexCount; ++i)
+        {
+            foreach (int j in neighbors[i])
+            {
+                double weight = weights[i, j];
+                double edge_energy = 0.0d;
+                Matrix<double> vec = (deformed_vertices[i].ToRowMatrix() -
+                    deformed_vertices[j].ToRowMatrix()).Transpose() -
+                    rotations[i] * (mesh_vertices[i].ToRowMatrix() -
+                    mesh_vertices[j].ToRowMatrix()).Transpose();
+                
+                edge_energy = weight * vec.Column(0).L2Norm()* vec.Column(0).L2Norm();
+                total_energy += edge_energy;
+            }
+        }
 
         return total_energy;
     }
 
-    public void SvdDecomp(Matrix<double> p_guess)
+    private void SvdDecomp(Matrix<double> p_guess)
     {
         for (int i = 0; i < free_vertex_count; i++)
         {
