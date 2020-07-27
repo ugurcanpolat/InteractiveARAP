@@ -36,8 +36,29 @@ public class ARAPDeformation
             mesh_vertices.Add(Utilities.ConvertFromUVectorToMNVector(vertex));
         }
     }
+    public List<Vector<double>> calculateARAPmesh(Vector3 targetPosition, int vertexIndex)
+    {
+        // non rigid deformation as initial guess
+        
+        Vector<double> targetDistance = Utilities.ConvertFromUVectorToMNVector(targetPosition)- mesh_vertices[vertexIndex];
+        Vector<double> startPosition = mesh_vertices[vertexIndex];
+        double maxDistance = 0.0f;
+        for (int i = 0; i < mesh_vertices.Count; i++)
+        {
+            if ((mesh_vertices[i] - mesh_vertices[vertexIndex]).L2Norm() > maxDistance)
+            {
+                maxDistance = (mesh_vertices[i] - mesh_vertices[vertexIndex]).L2Norm();
+            }
+        }
+        for (int i = 0; i < mesh_vertices.Count; i++)
+        {
+            double originalDistance = (mesh_vertices[i] - startPosition).L2Norm() / maxDistance;
+            mesh_vertices[i] += targetDistance * (1 - originalDistance);
+        }
+        return (mesh_vertices);
 
-    private void Initializer()
+    }
+        private void Initializer()
     {
         for (int i = 0; i < mesh.triangles.Length / 3; i++)
         {
