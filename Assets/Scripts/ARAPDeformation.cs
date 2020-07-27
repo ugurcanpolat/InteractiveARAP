@@ -94,6 +94,46 @@ public class ARAPDeformation
         return cotangents;
     }
 
+    private void DeformationPreprocess(List<int> fixed_vertices_)
+    {
+        fixed_vertices = fixed_vertices_;
+
+        // Initialize vertices_updated_ with Naive Laplacian editing. This method
+        // tries to minimize ||Lp' - Lp||^2 with fixed vertices constraints.
+        // Get all the dimensions.
+
+        // Initialize vertices_updated_.
+        deformed_vertices = new List<Vector<double>>();
+
+        // Note that L = -weight_.
+        // Denote y to be the fixed vertices:
+        // ||Lp' - Lp|| => ||-Ax - By - Lp|| => ||Ax - (-By + weight_ * p)||
+        // => A'Ax = A'(-By + weight_ * p).
+        // Build A and B first.
+        Matrix<double> A = Matrix<double>.Build.Sparse(mesh_vertices.Count, free_vertex_count);
+        Matrix<double> B = Matrix<double>.Build.Sparse(mesh_vertices.Count, fixed_vertex_count);
+
+        for (int i = 0; i < mesh_vertices.Count; i++)
+        {
+            foreach (int j in free_vertices)
+            {
+                A[i, j] = weights[i, j];
+            }
+
+            foreach (int j in fixed_vertices)
+            {
+                B[i, j] = weights[i, j];
+            }
+        }
+
+        // Build A' * A.   
+        Matrix<double> left = A.Transpose() * A;
+        LU<double> naive_lap_solver = left.LU();
+
+        return;
+
+    }
+
     private void ComputePositions()
     {
         // solving  Lp' = b  (L: laplace_beltrami_opr, p': solution for the
@@ -148,5 +188,31 @@ public class ARAPDeformation
         //}
 
         return total_energy;
+    }
+
+    public void SvdDecomp(Matrix<double> p_guess)
+    {
+        for (int i = 0; i < free_vertex_count; i++)
+        {
+            var P = Matrix<double>.Build.Dense(3, neighbors[free_vertices[i]].Count);
+            var P_prime = Matrix<double>.Build.Dense(neighbors[i].Count, 3);
+            var weights_diag = Matrix<double>.Build.DenseIdentity(neighbors[i].Count);
+
+            Vector<double> iweights = Vector<double>.Build.Dense(neighbors[i].Count);
+
+            foreach (int j in neighbors[i])
+            {
+                Vector3 edge = mesh.vertices[i] - mesh.vertices[j];
+                Vector3 edge_update = deformed_vertices[i] - deformed_vertices[j];
+
+                P.SetColumn(j, Utilities.ConvertFromUVectorToMNVector(edge));
+                P_prime.SetRow(j, Utilities.ConvertFromUVectorToMNVector(edge_update));
+                iweights[j] = weights[i, j];
+            }
+            weights_diag.SetDiagonal(iweights);
+            var Si = P ///buraya carpim isareti gelicek weights_diag * P_prime;
+            var svd = p_guess.Svd(true);
+            rotations[i] = (svd.U.Transpose() * svd.VT.Transpose());
+        }
     }
 }
