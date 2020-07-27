@@ -203,14 +203,15 @@ public class ARAPDeformation
             foreach (int j in neighbors[i])
             {
                 Vector3 edge = mesh.vertices[i] - mesh.vertices[j];
-                Vector3 edge_update = deformed_vertices[i] - deformed_vertices[j];
+                
+                Vector<double> edge_update = deformed_vertices[i] - deformed_vertices[j];
 
                 P.SetColumn(j, Utilities.ConvertFromUVectorToMNVector(edge));
-                P_prime.SetRow(j, Utilities.ConvertFromUVectorToMNVector(edge_update));
+                P_prime.SetRow(j, edge_update);
                 iweights[j] = weights[i, j];
             }
             weights_diag.SetDiagonal(iweights);
-            var Si = P ///buraya carpim isareti gelicek weights_diag * P_prime;
+            var Si = P * weights_diag * P_prime;
             var svd = p_guess.Svd(true);
             rotations[i] = (svd.U.Transpose() * svd.VT.Transpose());
         }
