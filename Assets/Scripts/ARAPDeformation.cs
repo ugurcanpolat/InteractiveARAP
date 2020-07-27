@@ -18,6 +18,7 @@ public class ARAPDeformation
     private List<int> fixed_vertices;
     private int free_vertex_count;
     private int fixed_vertex_coun;
+    private List<Vector<double>> mesh_vertices;
 
     private LU<double> solver;
 
@@ -28,6 +29,10 @@ public class ARAPDeformation
         weights = Matrix<double>.Build.Sparse(mesh.vertexCount, mesh.vertexCount);
         laplace_beltrami_opr = Matrix<double>.Build.Sparse(free_vertex_count,
                                                            free_vertex_count);
+        foreach(Vector3 vertex in mesh.vertices)
+        {
+            mesh_vertices.Add(Utilities.ConvertFromUVectorToMNVector(vertex));
+        }
     }
 
     private void Initializer()
@@ -87,7 +92,7 @@ public class ARAPDeformation
         return cotangents;
     }
 
-    private double ComputePositions(Matrix<double> Ri, Matrix<double> Rj, Mesh deformedMesh)
+    private void ComputePositions(Matrix<double> Ri, Matrix<double> Rj, List<Vector<double>> deformedMesh)
     {
         // solving  Lp' = b  (L: laplace_beltrami_opr, p': solution for the deformed vertices, b: right side of (9))
         Matrix<double> b = Matrix<double>.Build.Dense(free_vertex_count, 3);
@@ -96,16 +101,15 @@ public class ARAPDeformation
             // Sum for all neighbors j of i:  w/2 * (R_i - R_j) * (p_i - p_j)
             foreach(int j in neighbors[i])
             {
-                // TODO convert mesh vertices to math.net vertices (when new mesh is created) 
-                Vector<double> v = weights[i,j] * 0.5 * (Ri - Rj) * (mesh.vertices[i] - mesh.vertices[j]);
+                Vector<double> v = weights[i,j] * 0.5 * (Ri - Rj) * (mesh_vertices[i] - mesh_vertices[j]);
                 // add w_ij * p'_j if neighbor is fixed
                 if(fixed_vertices.Exists(x => x == j))
                 {
-                    v += weights[i,j] * deformedMesh.vertices[j];
+                    v += weights[i,j] * deformedMesh[j];
                 }
-                b[i][0] = v[0];
-                b[i][1] = v[1];
-                b[i][2] = v[2];
+                b[i,0] = v[0];
+                b[i,1] = v[1];
+                b[i,2] = v[2];
             }
         }
         solver.Solve(b);
