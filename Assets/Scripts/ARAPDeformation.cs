@@ -17,8 +17,10 @@ public class ARAPDeformation
     private List<int> free_vertices;
     private List<int> fixed_vertices;
     private int free_vertex_count;
-    private int fixed_vertex_coun;
+    private int fixed_vertex_count;
     private List<Vector<double>> mesh_vertices;
+    private List<Vector<double>> deformed_vertices;
+    private List<Matrix<double>> rotations;
 
     private LU<double> solver;
 
@@ -92,27 +94,38 @@ public class ARAPDeformation
         return cotangents;
     }
 
-    private void ComputePositions(Matrix<double> Ri, Matrix<double> Rj, List<Vector<double>> deformedMesh)
+    private void ComputePositions()
     {
-        // solving  Lp' = b  (L: laplace_beltrami_opr, p': solution for the deformed vertices, b: right side of (9))
+        // solving  Lp' = b  (L: laplace_beltrami_opr, p': solution for the
+        // deformed vertices, b: right side of (9))
         Matrix<double> b = Matrix<double>.Build.Dense(free_vertex_count, 3);
         for(int i=0; i<free_vertex_count; i++)
         {
             // Sum for all neighbors j of i:  w/2 * (R_i - R_j) * (p_i - p_j)
             foreach(int j in neighbors[i])
             {
-                Vector<double> v = weights[i,j] * 0.5 * (Ri - Rj) * (mesh_vertices[i] - mesh_vertices[j]);
+                Vector<double> v = weights[i,j] * 0.5 *
+                    (rotations[i] + rotations[j]) *
+                    (mesh_vertices[i] - mesh_vertices[j]);
+
                 // add w_ij * p'_j if neighbor is fixed
                 if(fixed_vertices.Exists(x => x == j))
                 {
-                    v += weights[i,j] * deformedMesh[j];
+                    v += weights[i,j] * deformed_vertices[j];
                 }
-                b[i,0] = v[0];
-                b[i,1] = v[1];
-                b[i,2] = v[2];
+
+                b[i,0] += v[0];
+                b[i,1] += v[1];
+                b[i,2] += v[2];
             }
         }
-        solver.Solve(b);
+        Matrix<double> solution = solver.Solve(b);
+
+        for (int i = 0; i < free_vertex_count; ++i)
+        {
+            int pos = free_vertices[i];
+            deformed_vertices[pos] = solution.Row(i);
+        }
     }
 
     private double ComputeEnergy()
