@@ -71,7 +71,8 @@ public class ARAPDeformation
         return (mesh_vertices);
 
     }
-        private void Initializer()
+
+    public void Initializer()
     {
         weights = Matrix<double>.Build.Sparse(mesh.vertexCount, mesh.vertexCount);
         for (int i = 0; i < mesh.triangles.Length / 3; i++)

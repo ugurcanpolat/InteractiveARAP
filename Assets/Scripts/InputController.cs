@@ -34,6 +34,7 @@ public class InputController : MonoBehaviour
         buttonHandler = controlPanel.GetComponent<ButtonHandler>();
         neighbors = buttonHandler.GetNeighbors();
         arapDeformation = new ARAPDeformation(meshFilter, neighbors);
+        arapDeformation.Initializer();
     }
 
     void Update()
