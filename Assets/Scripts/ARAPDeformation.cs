@@ -10,6 +10,8 @@ public class ARAPDeformation
     private List<List<int>> neighbors;
     private Matrix<double> weights;
     private Matrix<double> laplace_beltrami_opr;
+    private List<int> free_indices;
+    private List<int> fixed_indices;
     private List<int> free_vertices;
     private List<int> fixed_vertices;
     private List<Vector<double>> mesh_vertices;
@@ -26,22 +28,24 @@ public class ARAPDeformation
         mesh = mesh_;
         neighbors = neighbors_;
 
-        fixed_vertices = new List<int>(rightFootIndices);
-        free_vertices = new List<int>(mesh.vertexCount);
+        fixed_indices = new List<int>(rightFootIndices);
+        free_indices = new List<int>();
 
-        for (int i = 0; i < free_vertices.Count; i++)
+        for (int i = 0; i < mesh.vertexCount; i++)
         {
-            free_vertices[i] = i;
+            free_indices.Add(i);
         }
 
-        for (int i = 0; i < fixed_vertices.Count; i++)
+        for (int i = 0; i < fixed_indices.Count; i++)
         {
-            free_vertices.RemoveAt(fixed_vertices[i]);
+            free_indices.Remove(fixed_indices[i]);
         }
 
         weights = Matrix<double>.Build.Sparse(mesh.vertexCount, mesh.vertexCount);
-        laplace_beltrami_opr = Matrix<double>.Build.Sparse(free_vertices.Count,
-                                                           free_vertices.Count);
+        laplace_beltrami_opr = Matrix<double>.Build.Sparse(free_indices.Count,
+                                                           free_indices.Count);
+
+        mesh_vertices = new List<Vector<double>>();
 
         foreach (Vector3 vertex in mesh.vertices)
         {
@@ -49,27 +53,9 @@ public class ARAPDeformation
         }
     }
 
-    public List<Vector<double>> calculateARAPmesh(Vector3 targetPosition, int vertexIndex)
+    public List<Vector<double>> CalculateARAPMesh(Vector3 targetPosition, int vertexIndex)
     {
-        // non rigid deformation as initial guess
-        
-        Vector<double> targetDistance = Utilities.ConvertFromUVectorToMNVector(targetPosition)- mesh_vertices[vertexIndex];
-        Vector<double> startPosition = mesh_vertices[vertexIndex];
-        double maxDistance = 0.0f;
-        for (int i = 0; i < mesh_vertices.Count; i++)
-        {
-            if ((mesh_vertices[i] - mesh_vertices[vertexIndex]).L2Norm() > maxDistance)
-            {
-                maxDistance = (mesh_vertices[i] - mesh_vertices[vertexIndex]).L2Norm();
-            }
-        }
-        for (int i = 0; i < mesh_vertices.Count; i++)
-        {
-            double originalDistance = (mesh_vertices[i] - startPosition).L2Norm() / maxDistance;
-            mesh_vertices[i] += targetDistance * (1 - originalDistance);
-        }
-        return (mesh_vertices);
-
+        return deformed_vertices;
     }
 
     public void Initializer()
@@ -95,18 +81,18 @@ public class ARAPDeformation
             }
         }
 
-        laplace_beltrami_opr = Matrix<double>.Build.Sparse(free_vertices.Count,
-                                                           free_vertices.Count);
-        for (int i = 0; i < free_vertices.Count; ++i)
+        laplace_beltrami_opr = Matrix<double>.Build.Sparse(free_indices.Count,
+                                                           free_indices.Count);
+        for (int i = 0; i < free_indices.Count; ++i)
         {
-            int pos = free_vertices[i];
+            int pos = free_indices[i];
             foreach (int neighbor_pos in neighbors[pos])
             {
                 double weight = weights[pos, neighbor_pos];
                 laplace_beltrami_opr[i, i] += weight;
-                if (free_vertices.Exists(x => x == neighbor_pos))
+                if (free_indices.Exists(x => x == neighbor_pos))
                 {
-                    laplace_beltrami_opr[i, neighbor_pos] -= weight;
+                    laplace_beltrami_opr[i, free_indices.FindIndex(x => x == neighbor_pos)] -= weight;
                 }
             }
         }
@@ -114,61 +100,50 @@ public class ARAPDeformation
         solver = laplace_beltrami_opr.LU();
     }
 
-    private double[] ComputeCotangents(int triIndex)
+    public void DeformationPreprocess(Vector3 target_position, int target_idx)
     {
-        double[] cotangents = { 0.0d, 0.0d, 0.0d };
-        Vector3 A = mesh.vertices[mesh.triangles[triIndex]];
-        Vector3 B = mesh.vertices[mesh.triangles[triIndex + 1]];
-        Vector3 C = mesh.vertices[mesh.triangles[triIndex + 2]];
-        double aSquared = (B - C).sqrMagnitude;
-        double bSquared = (C - A).sqrMagnitude;
-        double cSquared = (A - B).sqrMagnitude;
-        double area4 = Vector3.Cross(B - A, C - A).magnitude * 2.0d;
-
-        cotangents[0] = (bSquared + cSquared - aSquared) / area4;
-        cotangents[1] = (cSquared + aSquared - bSquared) / area4;
-        cotangents[2] = (aSquared + bSquared - cSquared) / area4;
-        return cotangents;
-    }
-
-    private void DeformationPreprocess(List<int> fixed_vertices_)
-    {
-        fixed_vertices = fixed_vertices_;
-
-        deformed_vertices = new List<Vector<double>>();
-
-        Matrix<double> A = Matrix<double>.Build.Sparse(mesh_vertices.Count, free_vertices.Count);
-        Matrix<double> B = Matrix<double>.Build.Sparse(mesh_vertices.Count, fixed_vertices.Count);
-
-        for (int i = 0; i < mesh_vertices.Count; i++)
-        {
-            foreach (int j in free_vertices)
-            {
-                A[i, j] = weights[i, j];
-            }
-
-            foreach (int j in fixed_vertices)
-            {
-                B[i, j] = weights[i, j];
-            }
-        }
- 
-        Matrix<double> left = A.Transpose() * A;
-        LU<double> naive_lap_solver = left.LU();
+        free_indices.Remove(target_idx);
+        fixed_indices.Add(target_idx);
 
         Matrix<double> meshMatrix = Matrix<double>.Build.Dense(
             mesh_vertices.Count, 3);
         Matrix<double> fixedMatrix = Matrix<double>.Build.Dense(
-            fixed_vertices.Count, 3);
+            fixed_indices.Count, 3);
 
         for (int i = 0; i < mesh_vertices.Count; i++)
         {
             meshMatrix.SetRow(i, mesh_vertices[i]);
-            if (i < fixed_vertices.Count)
+            if (i < fixed_indices.Count)
             {
-                fixedMatrix.SetRow(i, mesh_vertices[fixed_vertices[i]]);
+                fixedMatrix.SetRow(i, mesh_vertices[fixed_indices[i]]);
             }
         }
+
+        fixedMatrix.SetRow(fixed_indices.Count-1,
+            Utilities.ConvertFromUVectorToMNVector(target_position));
+
+        deformed_vertices = new List<Vector<double>>();
+
+        Matrix<double> A = Matrix<double>.Build.Sparse(mesh_vertices.Count,
+            free_indices.Count);
+        Matrix<double> B = Matrix<double>.Build.Sparse(mesh_vertices.Count,
+            fixed_indices.Count);
+
+        for (int i = 0; i < mesh_vertices.Count; i++)
+        {
+            for (int j = 0; j < free_indices.Count; j++)
+            {
+                A[i, j] = weights[i, free_indices[j]];
+            }
+
+            for (int j = 0; j < fixed_indices.Count; j++)
+            {
+                B[i, j] = weights[i, fixed_indices[j]];
+            }
+        }
+
+        Matrix<double> left = A.Transpose() * A;
+        Cholesky<double> naive_lap_solver = left.Cholesky();
 
         for (int c = 0; c < 3; c++)
         {
@@ -176,15 +151,15 @@ public class ARAPDeformation
             Vector<double> right = A.Transpose() * b;
             Vector<double> x = naive_lap_solver.Solve(right);
 
-            for (int i = 0; i < free_vertices.Count; ++i)
+            for (int i = 0; i < free_indices.Count; ++i)
             {
-                deformed_vertices[free_vertices[i]][c] = x[i];
+                deformed_vertices[free_indices[i]][c] = x[i];
             }
         }
 
-        for (int i = 0; i < fixed_vertices.Count; i++)
+        for (int i = 0; i < fixed_indices.Count; i++)
         {
-            deformed_vertices[fixed_vertices[i]] = mesh_vertices[fixed_vertices[i]];
+            deformed_vertices[fixed_indices[i]] = fixedMatrix.Row(i);
         }
 
         List<Matrix<double>> edge_product = new List<Matrix<double>>();
@@ -203,7 +178,7 @@ public class ARAPDeformation
             }
         }
 
-        rotations.Clear();
+        rotations = new List<Matrix<double>>();
         for (int v = 0; v < mesh_vertices.Count; ++v)
         {
             Svd<double> svd = edge_product[v].Svd(true);
@@ -216,10 +191,10 @@ public class ARAPDeformation
     {
         // solving  Lp' = b  (L: laplace_beltrami_opr, p': solution for the
         // deformed vertices, b: right side of (9))
-        Matrix<double> b = Matrix<double>.Build.Dense(free_vertices.Count, 3);
-        for(int i=0; i < free_vertices.Count; i++)
+        Matrix<double> b = Matrix<double>.Build.Dense(free_indices.Count, 3);
+        for(int i=0; i < free_indices.Count; i++)
         {
-            int pos = free_vertices[i];
+            int pos = free_indices[i];
             // Sum for all neighbors j of i:  w/2 * (R_i - R_j) * (p_i - p_j)
             foreach(int j in neighbors[pos])
             {
@@ -228,7 +203,7 @@ public class ARAPDeformation
                     (mesh_vertices[pos] - mesh_vertices[j]);
 
                 // add w_ij * p'_j if neighbor is fixed
-                if(fixed_vertices.Exists(x => x == j))
+                if(fixed_indices.Exists(x => x == j))
                 {
                     v += weights[pos,j] * deformed_vertices[j];
                 }
@@ -239,9 +214,9 @@ public class ARAPDeformation
 
         Matrix<double> solution = solver.Solve(b);
 
-        for (int i = 0; i < free_vertices.Count; ++i)
+        for (int i = 0; i < free_indices.Count; ++i)
         {
-            deformed_vertices[free_vertices[i]] = solution.Row(i);
+            deformed_vertices[free_indices[i]] = solution.Row(i);
         }
     }
 
@@ -267,11 +242,28 @@ public class ARAPDeformation
         return total_energy;
     }
 
+    private double[] ComputeCotangents(int triIndex)
+    {
+        double[] cotangents = { 0.0d, 0.0d, 0.0d };
+        Vector3 A = mesh.vertices[mesh.triangles[triIndex]];
+        Vector3 B = mesh.vertices[mesh.triangles[triIndex + 1]];
+        Vector3 C = mesh.vertices[mesh.triangles[triIndex + 2]];
+        double aSquared = (B - C).sqrMagnitude;
+        double bSquared = (C - A).sqrMagnitude;
+        double cSquared = (A - B).sqrMagnitude;
+        double area4 = Vector3.Cross(B - A, C - A).magnitude * 2.0d;
+
+        cotangents[0] = (bSquared + cSquared - aSquared) / area4;
+        cotangents[1] = (cSquared + aSquared - bSquared) / area4;
+        cotangents[2] = (aSquared + bSquared - cSquared) / area4;
+        return cotangents;
+    }
+
     private void SvdDecomp(Matrix<double> p_guess)
     {
-        for (int i = 0; i < free_vertices.Count; i++)
+        for (int i = 0; i < free_indices.Count; i++)
         {
-            var P = Matrix<double>.Build.Dense(3, neighbors[free_vertices[i]].Count);
+            var P = Matrix<double>.Build.Dense(3, neighbors[free_indices[i]].Count);
             var P_prime = Matrix<double>.Build.Dense(neighbors[i].Count, 3);
             var weights_diag = Matrix<double>.Build.DenseIdentity(neighbors[i].Count);
 

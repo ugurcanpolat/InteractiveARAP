@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using MathNet.Numerics.LinearAlgebra;
 
 public class InputController : MonoBehaviour
 {
@@ -15,24 +16,15 @@ public class InputController : MonoBehaviour
     private bool mouseDown = false;
     private int leftHandIndex = 770;
 
-    private ButtonHandler buttonHandler;
     private List<List<int>> neighbors;
 
-    private ARAP arap;
     private ARAPDeformation arapDeformation;
 
-    public void newMesh()
+    public void newMesh(List<List<int>> neighbors_)
     {
         meshFilter = mesh.GetComponent<MeshFilter>().mesh;
         vertices = meshFilter.vertices;
-        arap = new ARAP();
-        arap.newMesh();
-    }
-
-    void Start()
-    {
-        buttonHandler = controlPanel.GetComponent<ButtonHandler>();
-        neighbors = buttonHandler.GetNeighbors();
+        neighbors = neighbors_;
         arapDeformation = new ARAPDeformation(meshFilter, neighbors);
         arapDeformation.Initializer();
     }
@@ -76,21 +68,27 @@ public class InputController : MonoBehaviour
         {
             mouseDown = true;
 
-            Vector3 cameraPos = Camera.main.transform.position;
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            Vector3 screenPoint = ray.GetPoint(0);
-            Vector3 direction = Vector3.Normalize(screenPoint - cameraPos);
+            //Vector3 cameraPos = Camera.main.transform.position;
+            //Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            //Vector3 screenPoint = ray.GetPoint(0);
+            //Vector3 direction = Vector3.Normalize(screenPoint - cameraPos);
 
-            vertices[leftHandIndex] = cameraPos +
-                direction * (vertices[leftHandIndex] - cameraPos).magnitude;
+            //vertices[leftHandIndex] = cameraPos +
+            //    direction * (vertices[leftHandIndex] - cameraPos).magnitude;
 
-            meshFilter.SetVertices(vertices);
+            arapDeformation.DeformationPreprocess(Input.mousePosition, leftHandIndex);
+            List<Vector<double>> deformed = arapDeformation.CalculateARAPMesh(Input.mousePosition, leftHandIndex);
+            deformed.ToArray();
+
+            Vector3[] deformedVertices = new Vector3[deformed.Count];
+
+            for(int i = 0; i < deformed.Count; i++)
+            {
+                deformedVertices[i] = Utilities.ConvertFromMNVectorToUVector(deformed[i]);
+            }
+            
+            meshFilter.SetVertices(deformedVertices);
             meshFilter.RecalculateNormals();
         }
-        if(Input.GetKeyDown("return"))
-        {
-            arap.calculateARAPmesh(vertices[leftHandIndex], leftHandIndex);
-        }
-
     }
 }
