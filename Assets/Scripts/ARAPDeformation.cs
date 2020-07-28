@@ -10,34 +10,45 @@ public class ARAPDeformation
     private List<List<int>> neighbors;
     private Matrix<double> weights;
     private Matrix<double> laplace_beltrami_opr;
-    private int[] rightFootIndices = { 0, 36, 48, 67, 81, 94, 109, 110, 137, 179,
-        181, 189, 206, 209, 216, 229, 231, 232, 235, 239, 240, 241, 293, 296, 307,
-        316, 328, 356, 380, 412, 518, 601, 818 };
-
     private List<int> free_vertices;
     private List<int> fixed_vertices;
-    private int free_vertex_count;
-    private int fixed_vertex_count;
     private List<Vector<double>> mesh_vertices;
     private List<Vector<double>> deformed_vertices;
     private List<Matrix<double>> rotations;
-
     private LU<double> solver;
+
+    private int[] rightFootIndices = { 0, 36, 48, 67, 81, 94, 109, 110, 137, 179,
+        181, 189, 206, 209, 216, 229, 231, 232, 235, 239, 240, 241, 293, 296, 307,
+        316, 328, 356, 380, 412, 518, 601, 818 };
 
     public ARAPDeformation(Mesh mesh_, List<List<int>> neighbors_)
     {
         mesh = mesh_;
         neighbors = neighbors_;
-        fixed_vertex_count = rightFootIndices.Length + 1;
-        free_vertex_count = mesh.vertices.Length - fixed_vertex_count;
+
+        fixed_vertices = new List<int>(rightFootIndices);
+        free_vertices = new List<int>(mesh.vertexCount);
+
+        for (int i = 0; i < free_vertices.Count; i++)
+        {
+            free_vertices[i] = i;
+        }
+
+        for (int i = 0; i < fixed_vertices.Count; i++)
+        {
+            free_vertices.RemoveAt(fixed_vertices[i]);
+        }
+
         weights = Matrix<double>.Build.Sparse(mesh.vertexCount, mesh.vertexCount);
-        laplace_beltrami_opr = Matrix<double>.Build.Sparse(free_vertex_count,
-                                                           free_vertex_count);
-        foreach(Vector3 vertex in mesh.vertices)
+        laplace_beltrami_opr = Matrix<double>.Build.Sparse(free_vertices.Count,
+                                                           free_vertices.Count);
+
+        foreach (Vector3 vertex in mesh.vertices)
         {
             mesh_vertices.Add(Utilities.ConvertFromUVectorToMNVector(vertex));
         }
     }
+
     public List<Vector<double>> calculateARAPmesh(Vector3 targetPosition, int vertexIndex)
     {
         // non rigid deformation as initial guess
@@ -62,6 +73,7 @@ public class ARAPDeformation
     }
         private void Initializer()
     {
+        weights = Matrix<double>.Build.Sparse(mesh.vertexCount, mesh.vertexCount);
         for (int i = 0; i < mesh.triangles.Length / 3; i++)
         {
             double[] cotangent = ComputeCotangents(i);
@@ -82,6 +94,8 @@ public class ARAPDeformation
             }
         }
 
+        laplace_beltrami_opr = Matrix<double>.Build.Sparse(free_vertices.Count,
+                                                           free_vertices.Count);
         for (int i = 0; i < free_vertices.Count; ++i)
         {
             int pos = free_vertices[i];
@@ -97,7 +111,6 @@ public class ARAPDeformation
         }
 
         solver = laplace_beltrami_opr.LU();
-
     }
 
     private double[] ComputeCotangents(int triIndex)
@@ -106,9 +119,9 @@ public class ARAPDeformation
         Vector3 A = mesh.vertices[mesh.triangles[triIndex]];
         Vector3 B = mesh.vertices[mesh.triangles[triIndex + 1]];
         Vector3 C = mesh.vertices[mesh.triangles[triIndex + 2]];
-        double aSquared = (float) Math.Pow(((B - C).magnitude), 2.0d);
-        double bSquared = (float) Math.Pow(((C - A).magnitude), 2.0d);
-        double cSquared = (float) Math.Pow(((A - B).magnitude), 2.0d);
+        double aSquared = (B - C).sqrMagnitude;
+        double bSquared = (C - A).sqrMagnitude;
+        double cSquared = (A - B).sqrMagnitude;
         double area4 = Vector3.Cross(B - A, C - A).magnitude * 2.0d;
 
         cotangents[0] = (bSquared + cSquared - aSquared) / area4;
@@ -120,22 +133,11 @@ public class ARAPDeformation
     private void DeformationPreprocess(List<int> fixed_vertices_)
     {
         fixed_vertices = fixed_vertices_;
-        fixed_vertex_count = fixed_vertices.Count;
 
-        // Initialize vertices_updated_ with Naive Laplacian editing. This method
-        // tries to minimize ||Lp' - Lp||^2 with fixed vertices constraints.
-        // Get all the dimensions.
-
-        // Initialize vertices_updated_.
         deformed_vertices = new List<Vector<double>>();
 
-        // Note that L = -weight_.
-        // Denote y to be the fixed vertices:
-        // ||Lp' - Lp|| => ||-Ax - By - Lp|| => ||Ax - (-By + weight_ * p)||
-        // => A'Ax = A'(-By + weight_ * p).
-        // Build A and B first.
-        Matrix<double> A = Matrix<double>.Build.Sparse(mesh_vertices.Count, free_vertex_count);
-        Matrix<double> B = Matrix<double>.Build.Sparse(mesh_vertices.Count, fixed_vertex_count);
+        Matrix<double> A = Matrix<double>.Build.Sparse(mesh_vertices.Count, free_vertices.Count);
+        Matrix<double> B = Matrix<double>.Build.Sparse(mesh_vertices.Count, fixed_vertices.Count);
 
         for (int i = 0; i < mesh_vertices.Count; i++)
         {
@@ -149,46 +151,41 @@ public class ARAPDeformation
                 B[i, j] = weights[i, j];
             }
         }
-
-        // Build A' * A.   
+ 
         Matrix<double> left = A.Transpose() * A;
         LU<double> naive_lap_solver = left.LU();
 
         Matrix<double> meshMatrix = Matrix<double>.Build.Dense(
             mesh_vertices.Count, 3);
         Matrix<double> fixedMatrix = Matrix<double>.Build.Dense(
-            fixed_vertex_count, 3);
+            fixed_vertices.Count, 3);
 
         for (int i = 0; i < mesh_vertices.Count; i++)
         {
             meshMatrix.SetRow(i, mesh_vertices[i]);
-            if (i < fixed_vertex_count)
+            if (i < fixed_vertices.Count)
             {
                 fixedMatrix.SetRow(i, mesh_vertices[fixed_vertices[i]]);
             }
         }
 
-        // Build A' * (-By + weight_ * p).
         for (int c = 0; c < 3; c++)
         {
             Vector<double> b = weights * meshMatrix.Column(c) - B * fixedMatrix.Column(c);
             Vector<double> right = A.Transpose() * b;
             Vector<double> x = naive_lap_solver.Solve(right);
 
-            // Write back the solution.
-            for (int i = 0; i < free_vertex_count; ++i)
+            for (int i = 0; i < free_vertices.Count; ++i)
             {
                 deformed_vertices[free_vertices[i]][c] = x[i];
             }
         }
 
-        // Write back fixed vertices constraints.
-        for (int i = 0; i < fixed_vertex_count; i++)
+        for (int i = 0; i < fixed_vertices.Count; i++)
         {
             deformed_vertices[fixed_vertices[i]] = mesh_vertices[fixed_vertices[i]];
         }
 
-        // Initialize rotations_ with vertices_updated_.
         List<Matrix<double>> edge_product = new List<Matrix<double>>();
         for (int i = 0; i < mesh_vertices.Count; i++)
         {
@@ -210,7 +207,7 @@ public class ARAPDeformation
         {
             Svd<double> svd = edge_product[v].Svd(true);
             Matrix<double> rotation = svd.U.Transpose() * svd.VT.Transpose();
-            rotations.Add(rotation.Transpose());
+            rotations.Add(rotation);
         }
     }
 
@@ -218,40 +215,39 @@ public class ARAPDeformation
     {
         // solving  Lp' = b  (L: laplace_beltrami_opr, p': solution for the
         // deformed vertices, b: right side of (9))
-        Matrix<double> b = Matrix<double>.Build.Dense(free_vertex_count, 3);
-        for(int i=0; i<free_vertex_count; i++)
+        Matrix<double> b = Matrix<double>.Build.Dense(free_vertices.Count, 3);
+        for(int i=0; i < free_vertices.Count; i++)
         {
+            int pos = free_vertices[i];
             // Sum for all neighbors j of i:  w/2 * (R_i - R_j) * (p_i - p_j)
-            foreach(int j in neighbors[i])
+            foreach(int j in neighbors[pos])
             {
-                Vector<double> v = weights[i,j] * 0.5 *
-                    (rotations[i] + rotations[j]) *
-                    (mesh_vertices[i] - mesh_vertices[j]);
+                Vector<double> v = weights[pos,j] * 0.5 *
+                    (rotations[pos] + rotations[j]) *
+                    (mesh_vertices[pos] - mesh_vertices[j]);
 
                 // add w_ij * p'_j if neighbor is fixed
                 if(fixed_vertices.Exists(x => x == j))
                 {
-                    v += weights[i,j] * deformed_vertices[j];
+                    v += weights[pos,j] * deformed_vertices[j];
                 }
 
-                b[i,0] += v[0];
-                b[i,1] += v[1];
-                b[i,2] += v[2];
+                b.SetRow(i, b.Row(i) + v);
             }
         }
+
         Matrix<double> solution = solver.Solve(b);
 
-        for (int i = 0; i < free_vertex_count; ++i)
+        for (int i = 0; i < free_vertices.Count; ++i)
         {
-            int pos = free_vertices[i];
-            deformed_vertices[pos] = solution.Row(i);
+            deformed_vertices[free_vertices[i]] = solution.Row(i);
         }
     }
 
     private double ComputeEnergy()
     {
         double total_energy = 0.0;
-        for (int i = 0; i < mesh.vertexCount; ++i)
+        for (int i = 0; i < mesh_vertices.Count; i++)
         {
             foreach (int j in neighbors[i])
             {
@@ -262,7 +258,7 @@ public class ARAPDeformation
                     rotations[i] * (mesh_vertices[i].ToRowMatrix() -
                     mesh_vertices[j].ToRowMatrix()).Transpose();
                 
-                edge_energy = weight * vec.Column(0).L2Norm()* vec.Column(0).L2Norm();
+                edge_energy = weight * vec.Column(0).L2Norm() * vec.Column(0).L2Norm();
                 total_energy += edge_energy;
             }
         }
@@ -272,7 +268,7 @@ public class ARAPDeformation
 
     private void SvdDecomp(Matrix<double> p_guess)
     {
-        for (int i = 0; i < free_vertex_count; i++)
+        for (int i = 0; i < free_vertices.Count; i++)
         {
             var P = Matrix<double>.Build.Dense(3, neighbors[free_vertices[i]].Count);
             var P_prime = Matrix<double>.Build.Dense(neighbors[i].Count, 3);
