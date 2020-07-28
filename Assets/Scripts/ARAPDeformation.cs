@@ -61,7 +61,7 @@ public class ARAPDeformation
     public void Initializer()
     {
         weights = Matrix<double>.Build.Sparse(mesh.vertexCount, mesh.vertexCount);
-        for (int i = 0; i < mesh.triangles.Length / 3; i+=3)
+        for (int i = 0; i < mesh.triangles.Length; i+=3)
         {
             double[] cotangent = ComputeCotangents(i);
 
@@ -143,7 +143,7 @@ public class ARAPDeformation
         }
 
         Matrix<double> left = A.Transpose() * A;
-        Cholesky<double> naive_lap_solver = left.Cholesky();
+        LU<double> naive_lap_solver = left.LU();
 
         for (int c = 0; c < 3; c++)
         {
