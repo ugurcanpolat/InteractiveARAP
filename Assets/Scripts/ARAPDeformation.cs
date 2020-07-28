@@ -100,6 +100,7 @@ public class ARAPDeformation
         solver = laplace_beltrami_opr.LU();
     }
 
+
     public void DeformationPreprocess(Vector3 target_position, int target_idx)
     {
         free_indices.Remove(target_idx);
@@ -111,6 +112,7 @@ public class ARAPDeformation
             fixed_indices.Count, 3);
         Matrix<double> deformedMatrix = Matrix<double>.Build.Dense(mesh_vertices.Count, 3);
 
+        /*
         for (int i = 0; i < mesh_vertices.Count; i++)
         {
             meshMatrix.SetRow(i, mesh_vertices[i]);
@@ -155,8 +157,31 @@ public class ARAPDeformation
                 deformedMatrix[free_indices[i], c] = x[i];
             }
         }
+        */
+        // simple initial guess
+        List<Vector<double>> def_vertices = mesh_vertices;
+        Vector<double> targetDistance = Utilities.ConvertFromUVectorToMNVector(target_position) - def_vertices[target_idx];
+        Vector<double> startPosition = def_vertices[target_idx];
+        double maxDistance = 0.0f;
+        for(int i=0; i<def_vertices.Count; i++)
+        {
+            if((def_vertices[i] - def_vertices[target_idx]).L2Norm() > maxDistance)
+            {
+                 maxDistance = (def_vertices[i] - def_vertices[target_idx]).L2Norm();
+            }
+        }
+        for(int i=0; i<def_vertices.Count; i++)
+        {
+            double originalDistance = (def_vertices[i] - startPosition).L2Norm() / maxDistance;
+            def_vertices[i] += targetDistance * (1 - originalDistance);
+            for (int c = 0; c < 3; c++)
+            {
+                deformedMatrix[i, c] = def_vertices[i][c];
+            }
+        }
 
 
+        // initial rotation
         deformed_vertices = new List<Vector<double>>();
         for (int i = 0; i < mesh_vertices.Count; i++)
         {
@@ -179,7 +204,7 @@ public class ARAPDeformation
                 Matrix<double> edge_update =
                   deformed_vertices[i].ToRowMatrix() - deformed_vertices[j].ToRowMatrix();
                 
-                edge_product_ += weight * edge * edge_update.Transpose();
+                edge_product_ += weight * edge_update.Transpose() * edge;
                 edge_product.Add(edge_product_);
             }
         }
