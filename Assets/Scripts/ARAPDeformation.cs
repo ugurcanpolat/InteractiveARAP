@@ -17,7 +17,8 @@ public class ARAPDeformation
     private List<Vector<double>> mesh_vertices;
     private List<Vector<double>> deformed_vertices;
     private List<Matrix<double>> rotations;
-    private LU<double> solver;
+    //private LU<double> solver;
+    private Cholesky<double> solver;
 
     private int[] rightFootIndices = { 0, 36, 48, 67, 81, 94, 109, 110, 137, 179,
         181, 189, 206, 209, 216, 229, 231, 232, 235, 239, 240, 241, 293, 296, 307,
@@ -61,14 +62,14 @@ public class ARAPDeformation
     public void Initializer()
     {
         weights = Matrix<double>.Build.Sparse(mesh.vertexCount, mesh.vertexCount);
-        for (int i = 0; i < mesh.triangles.Length / 3; i++)
+        for (int i = 0; i < mesh.triangles.Length - 2; i+=3)
         {
             double[] cotangent = ComputeCotangents(i);
 
             for (int j = 0; j < 3; j++)
             {
-                int idx1 = i + ((i + 1) % 3);
-                int idx2 = i + ((i + 2) % 3);
+                int idx1 = i + ((j + 1) % 3);
+                int idx2 = i + ((j + 2) % 3);
                 int first = mesh.triangles[idx1];
                 int second = mesh.triangles[idx2];
 
@@ -97,7 +98,11 @@ public class ARAPDeformation
             }
         }
 
-        solver = laplace_beltrami_opr.LU();
+        Debug.Log("is L symmetric: " + laplace_beltrami_opr.IsSymmetric());
+        Debug.Log("computing Cholesky");
+        //solver = laplace_beltrami_opr.LU();
+        solver = laplace_beltrami_opr.Cholesky();
+        Debug.Log("done Cholesky");
     }
 
     public void DeformationPreprocess(Vector3 target_position, int target_idx)
