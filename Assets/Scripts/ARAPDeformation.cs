@@ -62,7 +62,7 @@ public class ARAPDeformation
     public void Initializer()
     {
         weights = Matrix<double>.Build.Sparse(mesh.vertexCount, mesh.vertexCount);
-        for (int i = 0; i < mesh.triangles.Length - 2; i+=3)
+        for (int i = 0; i < mesh.triangles.Length; i++)
         {
             double[] cotangent = ComputeCotangents(i);
 
