@@ -1,9 +1,11 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using MathNet.Numerics.LinearAlgebra;
 
 public class InputController : MonoBehaviour
 {
+    public GameObject controlPanel;
     public GameObject cameraOrbit;
     public GameObject mesh;
 
@@ -14,14 +16,17 @@ public class InputController : MonoBehaviour
     private bool mouseDown = false;
     private int leftHandIndex = 770;
 
-    public ARAP arap;
+    private List<List<int>> neighbors;
 
-    public void newMesh()
+    private ARAPDeformation arapDeformation;
+
+    public void newMesh(List<List<int>> neighbors_)
     {
         meshFilter = mesh.GetComponent<MeshFilter>().mesh;
         vertices = meshFilter.vertices;
-        arap = new ARAP();
-        arap.newMesh();
+        neighbors = neighbors_;
+        arapDeformation = new ARAPDeformation(meshFilter, neighbors);
+        arapDeformation.Initializer();
     }
 
     void Update()
@@ -68,16 +73,25 @@ public class InputController : MonoBehaviour
             Vector3 screenPoint = ray.GetPoint(0);
             Vector3 direction = Vector3.Normalize(screenPoint - cameraPos);
 
-            vertices[leftHandIndex] = cameraPos +
+            Vector3 target_point = cameraPos +
                 direction * (vertices[leftHandIndex] - cameraPos).magnitude;
 
-            meshFilter.SetVertices(vertices);
-            meshFilter.RecalculateNormals();
-        }
-        if(Input.GetKeyDown("return"))
-        {
-            arap.calculateARAPmesh(vertices[leftHandIndex], leftHandIndex);
-        }
+            arapDeformation.DeformationPreprocess(target_point, leftHandIndex);
 
+            for (int i = 0; i < 10; i++)
+            {
+                List<Vector<double>> deformed = arapDeformation.CalculateARAPMesh(target_point, leftHandIndex);
+
+                Vector3[] deformedVertices = new Vector3[deformed.Count];
+
+                for (int j = 0; j < deformed.Count; j++)
+                {
+                    deformedVertices[j] = Utilities.ConvertFromMNVectorToUVector(deformed[j]);
+                }
+
+                meshFilter.SetVertices(deformedVertices);
+                meshFilter.RecalculateNormals();
+            }
+        }
     }
 }

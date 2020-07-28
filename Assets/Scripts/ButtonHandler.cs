@@ -78,7 +78,7 @@ public class ButtonHandler : MonoBehaviour
         ChangeButtonInteractivity(saveButton, true);
         GameObject inControl = GameObject.Find("InputController");
         InputController ic = inControl.GetComponent<InputController>();
-        ic.newMesh();
+        ic.newMesh(neighbors);
     }
 
     public void SaveClicked()

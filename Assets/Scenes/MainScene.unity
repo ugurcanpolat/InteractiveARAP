@@ -866,6 +866,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d27f5bde26bc1481eb2443a973f2b00d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  controlPanel: {fileID: 575355296}
   cameraOrbit: {fileID: 439289002}
   mesh: {fileID: 261650062}
   rotateSpeed: 20
