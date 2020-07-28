@@ -156,6 +156,8 @@ public class ARAPDeformation
             }
         }
 
+
+        deformed_vertices = new List<Vector<double>>();
         for (int i = 0; i < mesh_vertices.Count; i++)
         {
             deformed_vertices.Add(deformedMatrix.Row(i));
