@@ -97,7 +97,7 @@ public class ARAPDeformation
             }
         }
 
-        solver = laplace_beltrami_opr.LU();
+        //solver = laplace_beltrami_opr.LU();
     }
 
 
@@ -112,10 +112,11 @@ public class ARAPDeformation
             fixed_indices.Count, 3);
         Matrix<double> deformedMatrix = Matrix<double>.Build.Dense(mesh_vertices.Count, 3);
 
-        /*
         for (int i = 0; i < mesh_vertices.Count; i++)
         {
             meshMatrix.SetRow(i, mesh_vertices[i]);
+            deformedMatrix.SetRow(i, mesh_vertices[i]);
+            
             if (i < fixed_indices.Count)
             {
                 fixedMatrix.SetRow(i, mesh_vertices[fixed_indices[i]]);
@@ -124,7 +125,7 @@ public class ARAPDeformation
 
         fixedMatrix.SetRow(fixed_indices.Count-1,
             Utilities.ConvertFromUVectorToMNVector(target_position));
-
+        
         Matrix<double> A = Matrix<double>.Build.Sparse(mesh_vertices.Count,
             free_indices.Count);
         Matrix<double> B = Matrix<double>.Build.Sparse(mesh_vertices.Count,
@@ -156,30 +157,35 @@ public class ARAPDeformation
             {
                 deformedMatrix[free_indices[i], c] = x[i];
             }
-        }
-        */
-        // simple initial guess
-        List<Vector<double>> def_vertices = mesh_vertices;
-        Vector<double> targetDistance = Utilities.ConvertFromUVectorToMNVector(target_position) - def_vertices[target_idx];
-        Vector<double> startPosition = def_vertices[target_idx];
-        double maxDistance = 0.0f;
-        for(int i=0; i<def_vertices.Count; i++)
-        {
-            if((def_vertices[i] - def_vertices[target_idx]).L2Norm() > maxDistance)
-            {
-                 maxDistance = (def_vertices[i] - def_vertices[target_idx]).L2Norm();
-            }
-        }
-        for(int i=0; i<def_vertices.Count; i++)
-        {
-            double originalDistance = (def_vertices[i] - startPosition).L2Norm() / maxDistance;
-            def_vertices[i] += targetDistance * (1 - originalDistance);
-            for (int c = 0; c < 3; c++)
-            {
-                deformedMatrix[i, c] = def_vertices[i][c];
-            }
-        }
+        } 
 
+        
+        //// simple initial guess
+        //List<Vector<double>> def_vertices = mesh_vertices;
+        //Vector<double> targetDistance = Utilities.ConvertFromUVectorToMNVector(target_position) - def_vertices[target_idx];
+        //Vector<double> startPosition = def_vertices[target_idx];
+        //double maxDistance = 0.0f;
+        //for(int i=0; i<def_vertices.Count; i++)
+        //{
+        //    double dist = (def_vertices[i] - def_vertices[target_idx]).L2Norm() *
+        //        (def_vertices[i] - def_vertices[target_idx]).L2Norm();
+        //    if (dist > maxDistance)
+        //    {
+        //         maxDistance = (def_vertices[i] - def_vertices[target_idx]).L2Norm();
+        //    }
+        //}
+        //for(int i=0; i<def_vertices.Count; i++)
+        //{
+        //    double dist = (def_vertices[i] - startPosition).L2Norm() *
+        //        (def_vertices[i] - startPosition).L2Norm();
+        //    double originalDistance = dist / maxDistance;
+        //    def_vertices[i] += targetDistance * (1 - originalDistance);
+        //    for (int c = 0; c < 3; c++)
+        //    {
+        //        deformedMatrix[i, c] = def_vertices[i][c];
+        //    }
+        //}
+        
 
         // initial rotation
         deformed_vertices = new List<Vector<double>>();
@@ -204,7 +210,7 @@ public class ARAPDeformation
                 Matrix<double> edge_update =
                   deformed_vertices[i].ToRowMatrix() - deformed_vertices[j].ToRowMatrix();
                 
-                edge_product_ += weight * edge_update.Transpose() * edge;
+                edge_product_ += weight * edge.Transpose() * edge_update;
                 edge_product.Add(edge_product_);
             }
         }

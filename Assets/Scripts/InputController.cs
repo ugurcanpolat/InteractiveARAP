@@ -68,17 +68,16 @@ public class InputController : MonoBehaviour
         {
             mouseDown = true;
 
-            //Vector3 cameraPos = Camera.main.transform.position;
-            //Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            //Vector3 screenPoint = ray.GetPoint(0);
-            //Vector3 direction = Vector3.Normalize(screenPoint - cameraPos);
+            Vector3 cameraPos = Camera.main.transform.position;
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            Vector3 screenPoint = ray.GetPoint(0);
+            Vector3 direction = Vector3.Normalize(screenPoint - cameraPos);
 
-            //vertices[leftHandIndex] = cameraPos +
-            //    direction * (vertices[leftHandIndex] - cameraPos).magnitude;
+            Vector3 target_point = cameraPos +
+                direction * (vertices[leftHandIndex] - cameraPos).magnitude;
 
-            arapDeformation.DeformationPreprocess(Input.mousePosition, leftHandIndex);
-            List<Vector<double>> deformed = arapDeformation.CalculateARAPMesh(Input.mousePosition, leftHandIndex);
-            deformed.ToArray();
+            arapDeformation.DeformationPreprocess(target_point, leftHandIndex);
+            List<Vector<double>> deformed = arapDeformation.CalculateARAPMesh(target_point, leftHandIndex);
 
             Vector3[] deformedVertices = new Vector3[deformed.Count];
 
