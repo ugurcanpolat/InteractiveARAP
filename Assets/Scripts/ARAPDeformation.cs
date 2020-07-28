@@ -97,7 +97,7 @@ public class ARAPDeformation
             }
         }
 
-        //solver = laplace_beltrami_opr.LU();
+        solver = laplace_beltrami_opr.LU();
     }
 
     public void DeformationPreprocess(Vector3 target_position, int target_idx)
@@ -109,6 +109,7 @@ public class ARAPDeformation
             mesh_vertices.Count, 3);
         Matrix<double> fixedMatrix = Matrix<double>.Build.Dense(
             fixed_indices.Count, 3);
+        Matrix<double> deformedMatrix = Matrix<double>.Build.Dense(mesh_vertices.Count, 3);
 
         for (int i = 0; i < mesh_vertices.Count; i++)
         {
@@ -121,8 +122,6 @@ public class ARAPDeformation
 
         fixedMatrix.SetRow(fixed_indices.Count-1,
             Utilities.ConvertFromUVectorToMNVector(target_position));
-
-        deformed_vertices = new List<Vector<double>>();
 
         Matrix<double> A = Matrix<double>.Build.Sparse(mesh_vertices.Count,
             free_indices.Count);
@@ -153,8 +152,13 @@ public class ARAPDeformation
 
             for (int i = 0; i < free_indices.Count; ++i)
             {
-                deformed_vertices[free_indices[i]][c] = x[i];
+                deformedMatrix[free_indices[i], c] = x[i];
             }
+        }
+
+        for (int i = 0; i < mesh_vertices.Count; i++)
+        {
+            deformed_vertices.Add(deformedMatrix.Row(i));
         }
 
         for (int i = 0; i < fixed_indices.Count; i++)
