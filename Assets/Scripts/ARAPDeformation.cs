@@ -28,6 +28,8 @@ public class ARAPDeformation
     {
         mesh = mesh_;
         neighbors = neighbors_;
+        fixed_vertex_count = rightFootIndices.Length + 1;
+        free_vertex_count = mesh.vertices.Length - fixed_vertex_count;
         weights = Matrix<double>.Build.Sparse(mesh.vertexCount, mesh.vertexCount);
         laplace_beltrami_opr = Matrix<double>.Build.Sparse(free_vertex_count,
                                                            free_vertex_count);
@@ -118,6 +120,7 @@ public class ARAPDeformation
     private void DeformationPreprocess(List<int> fixed_vertices_)
     {
         fixed_vertices = fixed_vertices_;
+        fixed_vertex_count = fixed_vertices.Count;
 
         // Initialize vertices_updated_ with Naive Laplacian editing. This method
         // tries to minimize ||Lp' - Lp||^2 with fixed vertices constraints.
