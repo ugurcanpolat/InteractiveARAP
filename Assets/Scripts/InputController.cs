@@ -77,17 +77,21 @@ public class InputController : MonoBehaviour
                 direction * (vertices[leftHandIndex] - cameraPos).magnitude;
 
             arapDeformation.DeformationPreprocess(target_point, leftHandIndex);
-            List<Vector<double>> deformed = arapDeformation.CalculateARAPMesh(target_point, leftHandIndex);
 
-            Vector3[] deformedVertices = new Vector3[deformed.Count];
-
-            for(int i = 0; i < deformed.Count; i++)
+            for (int i = 0; i < 10; i++)
             {
-                deformedVertices[i] = Utilities.ConvertFromMNVectorToUVector(deformed[i]);
+                List<Vector<double>> deformed = arapDeformation.CalculateARAPMesh(target_point, leftHandIndex);
+
+                Vector3[] deformedVertices = new Vector3[deformed.Count];
+
+                for (int j = 0; j < deformed.Count; j++)
+                {
+                    deformedVertices[j] = Utilities.ConvertFromMNVectorToUVector(deformed[j]);
+                }
+
+                meshFilter.SetVertices(deformedVertices);
+                meshFilter.RecalculateNormals();
             }
-            
-            meshFilter.SetVertices(deformedVertices);
-            meshFilter.RecalculateNormals();
         }
     }
 }

@@ -41,6 +41,9 @@ public class ARAPDeformation
             free_indices.Remove(fixed_indices[i]);
         }
 
+        free_indices.Remove(770);
+        fixed_indices.Add(770);
+
         weights = Matrix<double>.Build.Sparse(mesh.vertexCount, mesh.vertexCount);
         laplace_beltrami_opr = Matrix<double>.Build.Sparse(free_indices.Count,
                                                            free_indices.Count);
@@ -55,6 +58,64 @@ public class ARAPDeformation
 
     public List<Vector<double>> CalculateARAPMesh(Vector3 targetPosition, int vertexIndex)
     {
+        // A temporary vector to hold all the edge products for all the vertices.
+        // This is the S matrix in equation (5).
+
+        List<Matrix<double>> edge_product = new List<Matrix<double>>();
+        for (int i = 0; i < mesh_vertices.Count; i++)
+        {
+            Matrix<double> edge_product_ = Matrix<double>.Build.Dense(3, 3);
+            foreach (int j in neighbors[i])
+            {
+                double weight = weights[i, j];
+                Matrix<double> edge = mesh_vertices[i].ToRowMatrix() - mesh_vertices[j].ToRowMatrix();
+                Matrix<double> edge_update =
+                  deformed_vertices[i].ToRowMatrix() - deformed_vertices[j].ToRowMatrix();
+
+                edge_product_ += weight * edge.Transpose() * edge_update;
+                edge_product.Add(edge_product_);
+            }
+        }
+
+        for (int v = 0; v < mesh_vertices.Count; ++v)
+        {
+            Svd<double> svd = edge_product[v].Svd(true);
+            Matrix<double> rotation = svd.U.Transpose() * svd.VT.Transpose();
+            rotations[v] = rotation;
+        }
+
+        // Step 2: compute the rhs in equation (9).
+        // The right hand side of equation (9). The x, y and z coordinates are
+        // computed separately.
+        Matrix<double> rhs = Matrix<double>.Build.Dense(free_indices.Count, 3);
+        for (int i = 0; i < free_indices.Count; ++i)
+        {
+            int i_pos = free_indices[i];
+            foreach (int j_pos in neighbors[i_pos])
+            {
+                double weight = weights[i_pos, j_pos];
+                Matrix<double> vec = weight * 0.5d
+                  * (rotations[i_pos] + rotations[j_pos])
+                  * (mesh_vertices[i_pos] - mesh_vertices[j_pos]).ToRowMatrix().Transpose();
+
+                rhs.SetRow(i, rhs.Row(i) + vec.Column(0));
+                if (fixed_indices.Exists(x => x == j_pos))
+                {
+                    rhs.SetRow(i, rhs.Row(i) + weight * deformed_vertices[j_pos]);
+                }
+            }
+        }
+
+        // Solve for free_vertices.
+        Matrix<double> solution = solver.Solve(rhs);
+
+        for (int i = 0; i < free_indices.Count; ++i)
+        {
+            int pos = free_indices[i];
+            deformed_vertices[pos] = solution.Row(i);
+        }
+
+
         return deformed_vertices;
     }
 
@@ -97,14 +158,13 @@ public class ARAPDeformation
             }
         }
 
-        //solver = laplace_beltrami_opr.LU();
+        solver = laplace_beltrami_opr.LU();
     }
-
 
     public void DeformationPreprocess(Vector3 target_position, int target_idx)
     {
-        free_indices.Remove(target_idx);
-        fixed_indices.Add(target_idx);
+        //free_indices.Remove(target_idx);
+        //fixed_indices.Add(target_idx);
 
         Matrix<double> meshMatrix = Matrix<double>.Build.Dense(
             mesh_vertices.Count, 3);
@@ -125,7 +185,7 @@ public class ARAPDeformation
 
         fixedMatrix.SetRow(fixed_indices.Count-1,
             Utilities.ConvertFromUVectorToMNVector(target_position));
-        
+
         Matrix<double> A = Matrix<double>.Build.Sparse(mesh_vertices.Count,
             free_indices.Count);
         Matrix<double> B = Matrix<double>.Build.Sparse(mesh_vertices.Count,
@@ -157,24 +217,24 @@ public class ARAPDeformation
             {
                 deformedMatrix[free_indices[i], c] = x[i];
             }
-        } 
+        }
 
-        
+
         //// simple initial guess
         //List<Vector<double>> def_vertices = mesh_vertices;
         //Vector<double> targetDistance = Utilities.ConvertFromUVectorToMNVector(target_position) - def_vertices[target_idx];
         //Vector<double> startPosition = def_vertices[target_idx];
         //double maxDistance = 0.0f;
-        //for(int i=0; i<def_vertices.Count; i++)
+        //for (int i = 0; i < def_vertices.Count; i++)
         //{
         //    double dist = (def_vertices[i] - def_vertices[target_idx]).L2Norm() *
         //        (def_vertices[i] - def_vertices[target_idx]).L2Norm();
         //    if (dist > maxDistance)
         //    {
-        //         maxDistance = (def_vertices[i] - def_vertices[target_idx]).L2Norm();
+        //        maxDistance = (def_vertices[i] - def_vertices[target_idx]).L2Norm();
         //    }
         //}
-        //for(int i=0; i<def_vertices.Count; i++)
+        //for (int i = 0; i < def_vertices.Count; i++)
         //{
         //    double dist = (def_vertices[i] - startPosition).L2Norm() *
         //        (def_vertices[i] - startPosition).L2Norm();
@@ -185,7 +245,7 @@ public class ARAPDeformation
         //        deformedMatrix[i, c] = def_vertices[i][c];
         //    }
         //}
-        
+
 
         // initial rotation
         deformed_vertices = new List<Vector<double>>();
